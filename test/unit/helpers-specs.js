@@ -4,11 +4,12 @@ import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import 'mochawait';
 import proxyquire from 'proxyquire';
-// import { withSandbox } from 'appium-test-support';
-let helpers = proxyquire('../../lib/helpers', {usb: { '@noCallThru': true }});
+let usbStub = { '@noCallThru': true };
+let helpers = proxyquire('../../lib/helpers', {usb: usbStub });
 let generateMessage = helpers.generateMessage;
 let packetFromBuffer = helpers.packetFromBuffer;
 let getAdbInterface = helpers.getAdbInterface;
+let findAdbDevice = helpers.findAdbDevice;
 
 import { ADB_COMMANDS, CONNECTION_TYPES, ADB_VALUES
        , LIBUSB_VALUES } from '../../lib/constants';
@@ -99,6 +100,17 @@ describe('helper function tests', () => {
     });
   });
   describe('findAdbDevice tests', () => {
-
+    let deviceArray = [device];
+    //let deviceListStub = sinon.stub(usbStub, "getDeviceList", () => { return deviceArray; });
+    usbStub.getDeviceList = ()=> { return deviceArray; };
+    it('should return null if the none of the devices have an adb interface', () => {
+      expect(findAdbDevice()).to.be.a('null');
+    });
+    it('should return an object if there was a device with an adb interface', () => {
+      device.interfaces = [iface];
+      iface.descriptor.bInterfaceClass = 255;
+      console.log("device: ", device);
+      expect(findAdbDevice()).to.not.be.a('null');
+    });
   });
 });
