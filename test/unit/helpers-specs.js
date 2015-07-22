@@ -5,6 +5,8 @@ import chaiAsPromised from 'chai-as-promised';
 import 'mochawait';
 import proxyquire from 'proxyquire';
 
+process.env.NODE_ENV = 'test';
+
 let usbStub = { '@noCallThru': true };
 let helpers = proxyquire('../../lib/helpers', {usb: usbStub });
 let generateMessage = helpers.generateMessage;
@@ -101,10 +103,6 @@ describe('helper function tests', () => {
     });
   });
   describe('findAdbDevice tests', () => {
-    // suppress console logging
-    let consoleLog = console.log;
-    console.log = {};
-
     let deviceArray = [device];
     usbStub.getDeviceList = ()=> { return deviceArray; };
     it('should return null if the none of the devices have an adb interface', () => {
@@ -115,6 +113,5 @@ describe('helper function tests', () => {
       iface.descriptor.bInterfaceClass = 255;
       expect(findAdbDevice()).to.not.be.a('null');
     });
-    console.log = consoleLog;
   });
 });
