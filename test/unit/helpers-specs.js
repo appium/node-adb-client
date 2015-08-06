@@ -12,7 +12,7 @@ let helpers = proxyquire('../../lib/helpers', {usb: usbStub });
 let generateMessage = helpers.generateMessage;
 let packetFromBuffer = helpers.packetFromBuffer;
 let getAdbInterface = helpers.getAdbInterface;
-let findAdbDevice = helpers.findAdbDevice;
+let findAdbDevices = helpers.findAdbDevices;
 
 import { ADB_COMMANDS, CONNECTION_TYPES, ADB_VALUES
        , LIBUSB_VALUES } from '../../lib/constants';
@@ -25,7 +25,8 @@ chai.use(chaiAsPromised);
 
 // fake device setup
 let endpoints = [LIBUSB_ENDPOINT_IN, LIBUSB_ENDPOINT_OUT ];
-let deviceDescriptor = { idVendor: 0x04e8 }; //samsung
+let deviceDescriptor = { idVendor: 0x04e8 // samsung
+                       , iSerialNumber: 12345 };
 let interfaceDescriptor = { bInterfaceClass: ADB_VALUES.ADB_CLASS
                           , bInterfaceSubClass: ADB_VALUES.ADB_SUBCLASS
                           , bInterfaceProtocol: ADB_VALUES.ADB_PROTOCOL };
@@ -102,16 +103,18 @@ describe('helper function tests', () => {
       expect(getAdbInterface(device)).to.be.a('null');
     });
   });
-  describe('findAdbDevice tests', () => {
+  describe('findAdbDevices tests', () => {
     let deviceArray = [device];
     usbStub.getDeviceList = ()=> { return deviceArray; };
-    it('should return null if the none of the devices have an adb interface', () => {
-      expect(findAdbDevice()).to.be.a('null');
+    it('should return an array with a length of zero', () => {
+      // expect(findAdbDevices()).to.be.a('null');
+      expect(findAdbDevices()).to.be.empty;
     });
     it('should return an object if there was a device with an adb interface', () => {
       device.interfaces = [iface];
+      device.getStringDescriptor = (argument) => { return argument; };
       iface.descriptor.bInterfaceClass = 255;
-      expect(findAdbDevice()).to.not.be.a('null');
+      expect(findAdbDevices()).to.not.be.empty;
     });
   });
 });
