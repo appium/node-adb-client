@@ -13,6 +13,7 @@ let generateMessage = helpers.generateMessage;
 let packetFromBuffer = helpers.packetFromBuffer;
 let getAdbInterface = helpers.getAdbInterface;
 let findAdbDevices = helpers.findAdbDevices;
+let selectBySerialNumber = helpers.selectBySerialNumber;
 
 import { ADB_COMMANDS, CONNECTION_TYPES, ADB_VALUES
        , LIBUSB_VALUES } from '../../lib/constants';
@@ -26,7 +27,7 @@ chai.use(chaiAsPromised);
 // fake device setup
 let endpoints = [LIBUSB_ENDPOINT_IN, LIBUSB_ENDPOINT_OUT ];
 let deviceDescriptor = { idVendor: 0x04e8 // samsung
-                       , iSerialNumber: 12345 };
+                       , iSerialNumber: "12345" };
 let interfaceDescriptor = { bInterfaceClass: ADB_VALUES.ADB_CLASS
                           , bInterfaceSubClass: ADB_VALUES.ADB_SUBCLASS
                           , bInterfaceProtocol: ADB_VALUES.ADB_PROTOCOL };
@@ -36,6 +37,10 @@ let device = { interfaces: [iface,]
              , deviceDescriptor: deviceDescriptor
              , configDescriptor: {}
              , open: () => { return "nothing"; } };
+let adbDevice = { device: device
+                , deviceInterface: iface
+                , serialNumber: "12345" };
+let deviceArray = [adbDevice];
 
 describe('helper function tests', () => {
   describe('generateMessage tests', () => {
@@ -104,17 +109,24 @@ describe('helper function tests', () => {
     });
   });
   describe('findAdbDevices tests', () => {
-    let deviceArray = [device];
-    usbStub.getDeviceList = ()=> { return deviceArray; };
+    usbStub.getDeviceList = ()=> { return [device]; };
     it('should return an array with a length of zero', () => {
-      // expect(findAdbDevices()).to.be.a('null');
       expect(findAdbDevices()).to.be.empty;
     });
     it('should return an object if there was a device with an adb interface', () => {
       device.interfaces = [iface];
-      device.getStringDescriptor = (argument) => { return argument; };
       iface.descriptor.bInterfaceClass = 255;
       expect(findAdbDevices()).to.not.be.empty;
+    });
+  });
+  describe('selectBySerialNumber tests', () => {
+    it('should return a device if a device with that serial number is available', () => {
+      expect(selectBySerialNumber(deviceArray, "12345")).should.not.be.null;
+    });
+    it('should throw an error if there is no device with that serial number', () => {
+      () => {
+        selectBySerialNumber(deviceArray, "54321");
+      }.should.throw();
     });
   });
 });
