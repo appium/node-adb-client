@@ -1,0 +1,48 @@
+{
+  "name": "node-adb-client",
+  "description": "Description goes here.",
+  "keywords": [
+    "appium"
+  ],
+  "version": "0.0.0",
+  "author": "appium",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/appium/node-adb-client.git"
+  },
+  "bugs": {
+    "url": "https://github.com/appium/node-adb-client/issues"
+  },
+  "engines": [
+    "node"
+  ],
+  "main": "./build/index.js",
+  "bin": {},
+  "directories": {
+    "lib": "lib"
+  },
+  "dependencies": {
+    "asyncbox": "^2.0.4",
+    "babel-runtime": "=5.5.5",
+    "bluebird": "^2.9.30",
+    "source-map-support": "^0.3.1",
+    "underscore": "^1.8.3",
+    "usb": "^1.0.6"
+  },
+  "scripts": {
+    "prepublish": "./node_modules/.bin/gulp prepublish",
+    "test": "./node_modules/.bin/gulp once",
+    "watch": "./node_modules/.bin/gulp"
+  },
+  "devDependencies": {
+    "appium-gulp-plugins": "^1.2.12",
+    "appium-test-support": "0.0.5",
+    "chai": "^3.0.0",
+    "chai-as-promised": "^5.1.0",
+    "gulp": "^3.8.11",
+    "mochawait": "^2.0.0",
+    "proxyquire": "^1.6.0",
+    "yargs": "^3.10.0"
+  }
+}

@@ -1,0 +1,11 @@
+language: node_js
+node_js:
+  - "0.12"
+branches:
+  only:
+    - "dev"
+addons:
+  apt:
+    packages:
+    - build-essential
+    - libudev-dev
