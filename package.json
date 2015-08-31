@@ -26,6 +26,7 @@
     "asyncbox": "^2.0.4",
     "babel-runtime": "=5.5.5",
     "bluebird": "^2.9.30",
+    "nan": "^2.0.7",
     "source-map-support": "^0.3.1",
     "underscore": "^1.8.3",
     "usb": "^1.0.6"

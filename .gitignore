@@ -2,3 +2,6 @@ node_modules
 Vagrantfile
 build
 *.log
+.DS_store
+deps/build
+
