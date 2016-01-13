@@ -8,6 +8,7 @@ class ADB {
   constructor () {
     this.stateMachine = StateMachine({
       condition: 0,
+      device: null,
       // initial: "startConnect",
       events: [
         { name: "start", from: "none", to: "startConnect" },
@@ -16,62 +17,90 @@ class ADB {
         { name: "tokenAccepted", from: "auth1", to: "connected" },
         { name: "tokenRefused", from: "auth1", to: "auth2" },
         { name: "publicKeyAccepted", from: "auth2", to: "connected" },
+        { name: "publicKeyRefused", from: "auth2", to: "startConnect" },
+        { name: "timeout", from: "waitForAuth", to: "startConnect" },
         { name: "timeout", from: "auth1", to: "startConnect" },
         { name: "timeout", from: "auth2", to: "startConnect" }
       ],
       callbacks: {
-        onenteredstartConnect: function () {
+        onenteredstartConnect: async function () {
           console.log("send cnxn");
+          await this.device.initConnection();
           this.sentCnxn();
+        },
+        onleavestartConnect: function () {
+          console.log("leaving startConnect");
         },
         onsentCnxn: function() {
           console.log("sent cnxn");
         },
-        onenteredwaitForAuth: function () {
+        onenteredwaitForAuth: async function () {
           console.log("waiting for auth from device");
           // we'd get the devices response here and
-          this.recvdAuth();
+          try {
+            this.token = await this.device.waitForAuth();
+            this.recvdAuth();
+          } catch (err) {
+            if (err.errno === 2) {
+              this.timeout();
+            } else {
+              throw err;
+            }
+          }
         },
-        onleavewaitForAuth: function () {
+        onleavewaitForAuth: async function () {
           console.log("recv'd auth from device");
+          // send signed auth token
+          await this.device.sendSignedToken(this.token);
         },
-        onenteredauth1: function () {
-          console.log("waiting for auth response");
-          let condition = Math.floor((Math.random() * 10) + 1);
-          if (condition === 1) {
-            this.timeout();
-          } else if (condition > 1 && condition < 6) {
-            this.tokenRefused();
-          } else {
-            this.tokenAccepted();
+        onenteredauth1: async function () {
+          try {
+            if (await this.device.waitAuthResponse() === true) {
+              this.tokenAccepted();
+            } else {
+              this.tokenRefused();
+            }
+          } catch(err) {
+            if (err.errno === 2) {
+              this.timeout();
+            }
           }
         },
         ontokenAccepted: function () {
           console.log("signed token was accepted by device");
         },
-        ontokenRefused: function () {
+        ontokenRefused: async function () {
           console.log("signed token was refused, need to send public key");
+          await this.device.sendPublicKey();
         },
-        onenteredauth2: function () {
+        onenteredauth2: async function () {
           console.log("wait for cnxn response to our public key");
-          let condition = Math.floor((Math.random() * 10) + 1);
-          if (condition === 1) {
-            this.timeout();
-          } else if (condition > 1 && condition < 6) {
-            this.tokenRefused();
-          } else {
-            this.publicKeyAccepted();
+          try {
+            if (await this.device.waitAuthResponse() === true) {
+              this.publicKeyAccepted();
+            } else {
+              console.log("public key was not accepted, weird");
+              this.publicKeyRefused();
+            }
+          } catch(err) {
+            if (err.errno === 2) {
+              this.timeout();
+            }
           }
         },
-        ontimeout: function () {
+        ontimeout: async function () {
           console.log("timeout occured, returning to start");
+          await this.device.closeConnection();
+        },
+        onpublicKeyAccepted: function () {
+          console.log("public key accepted");
         }
       }
     });
   }
 
   // return an array of devices that have an adb interface
-  findAdbDevices () {
+  static findAdbDevices () {
     logExceptOnTest("Trying to find a usb device.");
     let adbDevices = [];
     let usbDevices = usb.getDeviceList();
@@ -92,9 +121,13 @@ class ADB {
     this.stateMachine.device = new ADBDevice(connectionType, device);
   }
 
+  start () {
+    this.stateMachine.start();
+  }
+
   // search through the devices interfaces for an interface that can be used for
   // adb communications
-  getAdbInterface (device) {
+  static getAdbInterface (device) {
     device.open();
     if (device.interfaces === null) return null;
     // TypeError in plugin gulp-mocha with message Cannot redfine property: configDescriptor
@@ -127,7 +160,7 @@ class ADB {
   }
 
   // returns the devices serial number
-  async getSerialNumber (device) {
+  static async getSerialNumber (device) {
     let langId = 0x0409;
     let length = 255;
     let deviceDescriptor = device.deviceDescriptor;
@@ -141,7 +174,7 @@ class ADB {
     return serialNumber.toString('utf16le', 2);
   }
 
-  async getSerialNumbers (devices) {
+  static async getSerialNumbers (devices) {
     for (let device of devices) {
       let currentDevice = device.device;
       device.serialNumber = await this.getSerialNumber(currentDevice);
