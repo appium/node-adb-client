@@ -7,6 +7,7 @@ import proxyquire from 'proxyquire';
 
 let usbStub = { '@noCallThru': true };
 let signLibStub = { '@noCallThru': true };
+// this proxyquire isn't working, gulp build will fail at unit tests
 let adbDeviceStub = proxyquire('../../lib/adb-device', { 'signLib': signLibStub });
 let adb = proxyquire('../../adb', { 'usb': usbStub, 'adb-device': adbDeviceStub });
 import { ADB_VALUES, LIBUSB_VALUES } from '../../lib/constants';
