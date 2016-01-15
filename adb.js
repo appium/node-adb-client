@@ -9,30 +9,35 @@ class ADB {
     this.stateMachine = StateMachine({
       condition: 0,
       device: null,
-      // initial: "startConnect",
       events: [
+        // connection states
         { name: "start", from: "none", to: "startConnect" },
         { name: "sentCnxn", from: "startConnect", to: "waitForAuth" },
         { name: "recvdAuth", from: "waitForAuth", to: "auth1" },
         { name: "tokenAccepted", from: "auth1", to: "connected" },
         { name: "tokenRefused", from: "auth1", to: "auth2" },
         { name: "publicKeyAccepted", from: "auth2", to: "connected" },
-        { name: "publicKeyRefused", from: "auth2", to: "startConnect" },
-        { name: "timeout", from: "waitForAuth", to: "startConnect" },
-        { name: "timeout", from: "auth1", to: "startConnect" },
-        { name: "timeout", from: "auth2", to: "startConnect" }
+        { name: "publicKeyRefused", from: "auth2", to: "none" },
+        { name: "timeout", from: ["waitForAuth"
+                                , "auth1"
+                                , "auth2"], to: "none" },
+        // normal command states
+        { name: "open", from: "connected", to: "openSwitch" },
+        { name: "openShell", from: "openSwitch", to: "shell" },
+        { name: "openPush", from: "openSwitch", to: "push" },
+        { name: "openPull", from: "openSwitch", to: "pull" },
+        { name: "openInstall", from: "openSwitch", to: "install" },
+        { name: "openReboot", from: "openSwitch", to: "reboot" }
       ],
       callbacks: {
+        // onentered<state> callbacks
+        onenterednone: function () {
+          this.start();
+        },
         onenteredstartConnect: async function () {
           console.log("send cnxn");
           await this.device.initConnection();
           this.sentCnxn();
-        },
-        onleavestartConnect: function () {
-          console.log("leaving startConnect");
-        },
-        onsentCnxn: function() {
-          console.log("sent cnxn");
         },
         onenteredwaitForAuth: async function () {
           console.log("waiting for auth from device");
@@ -48,11 +53,6 @@ class ADB {
             }
           }
         },
-        onleavewaitForAuth: async function () {
-          console.log("recv'd auth from device");
-          // send signed auth token
-          await this.device.sendSignedToken(this.token);
-        },
         onenteredauth1: async function () {
           try {
             if (await this.device.waitAuthResponse() === true) {
@@ -65,13 +65,6 @@ class ADB {
               this.timeout();
             }
           }
-        },
-        ontokenAccepted: function () {
-          console.log("signed token was accepted by device");
-        },
-        ontokenRefused: async function () {
-          console.log("signed token was refused, need to send public key");
-          await this.device.sendPublicKey();
         },
         onenteredauth2: async function () {
           console.log("wait for cnxn response to our public key");
@@ -88,12 +81,62 @@ class ADB {
             }
           }
         },
+        onenteredopenSwitch: async function (options) {
+          let command = options.args[0];
+          console.log("options: ", options);
+          console.log("command: ", command);
+          switch (command.type) {
+            case "shell":
+              console.log("shell command");
+              await this.device.shell(command.string);
+              break;
+            case "push":
+              console.log("push command");
+              await this.device.push(command.source, command.destination);
+              break;
+            case "pull":
+              console.log("pull command");
+              await this.device.pull(command.source, command.destination);
+              break;
+            case "install":
+              console.log("install command");
+              await this.device.install(command.source);
+              break;
+            case "reboot":
+              console.log("reboot command");
+              await this.device.reboot();
+              break;
+            default:
+              console.log("Sorry, that command type isn't supported yet: ", command.type);
+              break;
+          }
+        },
+        // on<transition> callbacks
+        ontokenAccepted: function () {
+          console.log("signed token was accepted by device");
+        },
+        ontokenRefused: async function () {
+          console.log("signed token was refused, need to send public key");
+          await this.device.sendPublicKey();
+        },
         ontimeout: async function () {
           console.log("timeout occured, returning to start");
-          await this.device.closeConnection();
+          // await this.device.closeConnection();
+        },
+        onsentCnxn: function() {
+          console.log("sent cnxn");
         },
         onpublicKeyAccepted: function () {
           console.log("public key accepted");
+        },
+        // onleave<state> callbacks
+        onleavewaitForAuth: async function () {
+          console.log("recv'd auth from device");
+          // send signed auth token
+          await this.device.sendSignedToken(this.token);
+        },
+        onleavestartConnect: function () {
+          console.log("leaving startConnect");
         }
       }
     });
@@ -119,10 +162,19 @@ class ADB {
 
   selectDevice (connectionType, device) {
     this.stateMachine.device = new ADBDevice(connectionType, device);
+    console.log("ADB device created");
   }
 
   start () {
     this.stateMachine.start();
+  }
+
+  open (command) {
+    if (this.stateMachine.current === "connected") {
+      this.stateMachine.open(command);
+    } else {
+      throw new Error("Cannot open stream yet, not connected to a device");
+    }
   }
 
   // search through the devices interfaces for an interface that can be used for
