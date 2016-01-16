@@ -177,6 +177,10 @@ class ADB {
     }
   }
 
+  async end () {
+    await this.stateMachine.device.closeConnection();
+  }
+
   // search through the devices interfaces for an interface that can be used for
   // adb communications
   static getAdbInterface (device) {
