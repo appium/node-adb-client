@@ -1,15 +1,13 @@
 "use strict";
 
 var gulp = require('gulp'),
-    fs = require('fs'),
+    Q = require('q'),
+    exec = Q.denodeify(require('child_process').exec),
     boilerplate = require('appium-gulp-plugins').boilerplate.use(gulp);
 
 gulp.task('node-gyp', function () {
-  // exec is async, so maybe the unit tests are starting and erroring out
-  // before the node-gyp build finishes?
-  return exec('node-gyp configure build').then(function () {
-    fs.statSync('./build/Release/binding.node');
-  });
+  console.log("test");
+  return exec('node-gyp configure build');
 });
 
 boilerplate({build: 'node-adb-client', jscs: false, postTranspile: ['node-gyp']});
