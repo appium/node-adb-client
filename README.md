@@ -13,3 +13,8 @@ platform before running `npm install`.
 
 After `npm install`, please run `node-gyp configure build` to build libmincrypt.
 
+# ADB Keys
+This library assumes the location of your ADB public and private key will be 
+`$HOME/.android/`. Please ensure your keys are in this folder, or modify the values 
+under `ADB_KEY` in `lib/constants.js`.
+
