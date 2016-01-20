@@ -164,6 +164,15 @@ class ADB {
     this.stateMachine.device = new ADBDevice(connectionType, device);
     console.log("ADB device created");
   }
+  // select a device from the list of available devices by serial number
+  selectBySerialNumber (connectionType, devices, serialNumber) {
+    for (let device of devices) {
+      if (serialNumber === device.serialNumber) {
+        this.selectDevice(connectionType, device);
+      }
+    }
+    throw new Error("No device available with the serial number: ", serialNumber);
+  }
 
   start () {
     this.stateMachine.start();

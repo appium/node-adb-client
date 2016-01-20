@@ -6,7 +6,6 @@ var gulp = require('gulp'),
     boilerplate = require('appium-gulp-plugins').boilerplate.use(gulp);
 
 gulp.task('node-gyp', function () {
-  console.log("test");
   return exec('node-gyp configure build');
 });
 
