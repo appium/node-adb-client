@@ -3,7 +3,7 @@ node_js:
   - "0.12"
 branches:
   only:
-    - "dev"
+    - "master"
 addons:
   apt:
     packages:
