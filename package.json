@@ -27,7 +27,7 @@
     "babel-runtime": "=5.5.5",
     "bluebird": "^2.9.30",
     "fsm-as-promised": "^0.8.2",
-    "nan": "^2.0.7",
+    "nan": "^2.2.0",
     "q": "^1.4.1",
     "source-map-support": "^0.3.1",
     "underscore": "^1.8.3",
@@ -39,13 +39,13 @@
     "watch": "./node_modules/.bin/gulp"
   },
   "devDependencies": {
-    "appium-gulp-plugins": "^1.2.12",
+    "appium-gulp-plugins": "^1.4.0",
     "appium-test-support": "0.0.5",
-    "chai": "^3.0.0",
+    "chai": "^3.5.0",
     "chai-as-promised": "^5.1.0",
-    "gulp": "^3.8.11",
+    "gulp": "^3.9.1",
     "mochawait": "^2.0.0",
-    "proxyquire": "^1.6.0",
-    "yargs": "^3.10.0"
+    "proxyquire": "^1.7.4",
+    "yargs": "^3.32.0"
   }
 }
