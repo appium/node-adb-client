@@ -4,6 +4,12 @@ import usb from 'usb';
 import { logExceptOnTest } from './lib/helpers';
 import { USB_VENDOR_IDS, ADB_VALUES } from './lib/constants';
 
+const STATE_NONE = 0;
+const STATE_WAITFORAUTH = 1;
+const STATE_AUTH1 = 2;
+const STATE_AUTH2 = 3;
+const STATE_CONNECTED = 4;
+
 class ADB {
   constructor () {
     this.stateMachine = StateMachine({
