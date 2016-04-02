@@ -24,10 +24,10 @@
   },
   "dependencies": {
     "asyncbox": "^2.0.4",
-    "babel-runtime": "=5.5.5",
-    "bluebird": "^2.9.30",
+    "babel-runtime": "=6.6.1",
+    "bluebird": "^3.3.4",
     "nan": "^2.1.0",
-    "source-map-support": "^0.3.1",
+    "source-map-support": "^0.4.0",
     "underscore": "^1.8.3",
     "usb": "^1.0.6"
   },
@@ -44,6 +44,6 @@
     "gulp": "^3.8.11",
     "mochawait": "^2.0.0",
     "proxyquire": "^1.6.0",
-    "yargs": "^3.10.0"
+    "yargs": "^4.3.2"
   }
 }
