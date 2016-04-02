@@ -11,8 +11,6 @@ let usbStub = { '@noCallThru': true };
 let helpers = proxyquire('../../lib/helpers', {usb: usbStub });
 let generateMessage = helpers.generateMessage;
 let packetFromBuffer = helpers.packetFromBuffer;
-let getAdbInterface = helpers.getAdbInterface;
-let findAdbDevices = helpers.findAdbDevices;
 let selectBySerialNumber = helpers.selectBySerialNumber;
 
 import { ADB_COMMANDS, CONNECTION_TYPES, ADB_VALUES
@@ -93,30 +91,6 @@ describe('helper function tests', () => {
       packetBuffer.writeUInt32LE(0, 12);
       let packet = packetFromBuffer(packetBuffer);
       (typeof packet.data).should.equal('undefined');
-    });
-  });
-  describe('getAdbInterface tests', () => {
-    it('should return an interface if there is one for ADB comms', () => {
-        getAdbInterface(device).should.not.be.null;
-    });
-    it('should return null if there are interfaces but no ADB interface', () => {
-      iface.descriptor.bInterfaceClass = 100;
-      expect(getAdbInterface(device)).to.be.a('null');
-    });
-    it('should return null if there are no interfaces at all', () => {
-      device.interfaces = null;
-      expect(getAdbInterface(device)).to.be.a('null');
-    });
-  });
-  describe('findAdbDevices tests', () => {
-    usbStub.getDeviceList = ()=> { return [device]; };
-    it('should return an array with a length of zero', () => {
-      expect(findAdbDevices()).to.be.empty;
-    });
-    it('should return an object if there was a device with an adb interface', () => {
-      device.interfaces = [iface];
-      iface.descriptor.bInterfaceClass = 255;
-      expect(findAdbDevices()).to.not.be.empty;
     });
   });
   describe('selectBySerialNumber tests', () => {
