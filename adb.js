@@ -5,8 +5,8 @@ import ADBDevice from './lib/adb-device';
 
 const NOT_CONNECTED = 0;
 const WAIT_FOR_AUTH = 1;
-const AUTH_ONE = 2;
-const AUTH_TWO = 3;
+const SEND_PRIVATE_KEY = 2;
+const SEND_PUBLIC_KEY = 3;
 const CONNECTED = 4;
 
 class ADB {
@@ -75,23 +75,41 @@ class ADB {
           break;
         case WAIT_FOR_AUTH:
           console.log("WAIT_FOR_AUTH");
-          packet = await this.device.waitForAuth();
-          if (packet === false) {
-            this.state = NOT_CONNECTED;
-          } else {
-            this.state = AUTH_ONE;
+          try {
+            packet = await this.device.waitForAuth();
+            if (packet === false) {
+              this.state = NOT_CONNECTED;
+            } else {
+              this.state = SEND_PRIVATE_KEY;
+            }
+          } catch (e) {
+            if (e.errno) {
+              console.log("Timeout error, this should never happen: ", this.state);
+              this.state = NOT_CONNECTED;
+            } else {
+              throw e;
+            }
           }
           break;
-        case AUTH_ONE:
-          console.log("AUTH_ONE");
-          if (await this.device.sendSignedToken(packet.data)) {
-            this.state = CONNECTED;
-          } else {
-            this.state = AUTH_TWO;
+        case SEND_PRIVATE_KEY:
+          console.log("SEND_PRIVATE_KEY");
+          try {
+            if (await this.device.sendSignedToken(packet.data)) {
+              this.state = CONNECTED;
+            } else {
+              this.state = SEND_PUBLIC_KEY;
+            }
+          } catch (e) {
+            if (e.errno === 2) {
+              console.log("Timeout error, this should never happen: ", this.state);
+              this.state = NOT_CONNECTED;
+            } else {
+              throw e;
+            }
           }
           break;
-        case AUTH_TWO:
-          console.log("AUTH_TWO");
+        case SEND_PUBLIC_KEY:
+          console.log("SEND_PUBLIC_KEY");
           try {
             if (await this.device.sendPublicKey()) {
               this.state = CONNECTED;
