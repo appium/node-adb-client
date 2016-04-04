@@ -1,5 +1,5 @@
 import usb from 'usb';
-import { USB_VENDOR_IDS, ADB_VALUES } from './lib/constants';
+import { USB_VENDOR_IDS, ADB_VALUES, CONNECTION_TYPES } from './lib/constants';
 import { logExceptOnTest } from './lib/helpers';
 import ADBDevice from './lib/adb-device';
 
@@ -11,6 +11,9 @@ const CONNECTED = 4;
 
 class ADB {
   constructor (connectionType, device) {
+    if (connectionType !== (CONNECTION_TYPES.USB || CONNECTION_TYPES.TCP)) {
+      throw new Error("Cannot create new ADB device, invalid connection type.");
+    }
     this.state = NOT_CONNECTED;
     this.device = new ADBDevice(connectionType, device);
   }
