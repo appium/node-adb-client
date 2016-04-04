@@ -35,7 +35,7 @@ let device = { interfaces: [iface,]
 //                 , serialNumber: "12345" };
 // let deviceArray = [adbDevice];
 
-describe('helper function tests', () => {
+describe('static function tests', () => {
   describe('getAdbInterface tests', () => {
     it('should return an interface if there is one for ADB comms', () => {
         adb.getAdbInterface(device).should.not.be.null;
@@ -60,15 +60,4 @@ describe('helper function tests', () => {
       expect(adb.findAdbDevices()).to.not.be.empty;
     });
   });
-//   // describe('selectBySerialNumber tests', () => {
-//   //   // TODO: change this test
-//   //   // it('should return a device if a device with that serial number is available', () => {
-//   //   //   expect(adb.selectBySerialNumber(,deviceArray, "12345")).should.not.be.null;
-//   //   // });
-//   //   it('should throw an error if there is no device with that serial number', () => {
-//   //     () => {
-//   //       adb.selectBySerialNumber(deviceArray, "54321");
-//   //     }.should.throw();
-//   //   });
-//   // });
 });

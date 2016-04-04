@@ -11,34 +11,12 @@ let usbStub = { '@noCallThru': true };
 let helpers = proxyquire('../../lib/helpers', {usb: usbStub });
 let generateMessage = helpers.generateMessage;
 let packetFromBuffer = helpers.packetFromBuffer;
-let selectBySerialNumber = helpers.selectBySerialNumber;
 
-import { ADB_COMMANDS, CONNECTION_TYPES, ADB_VALUES
-       , LIBUSB_VALUES } from '../../lib/constants';
-const LIBUSB_ENDPOINT_IN = LIBUSB_VALUES.LIBUSB_ENDPOINT_IN
-    , LIBUSB_ENDPOINT_OUT = LIBUSB_VALUES.LIBUSB_ENDPOINT_OUT;
+import { ADB_COMMANDS, CONNECTION_TYPES } from '../../lib/constants';
 
 chai.should();
-let expect = chai.expect;
+// let expect = chai.expect;
 chai.use(chaiAsPromised);
-
-// fake device setup
-let endpoints = [LIBUSB_ENDPOINT_IN, LIBUSB_ENDPOINT_OUT ];
-let deviceDescriptor = { idVendor: 0x04e8 // samsung
-                       , iSerialNumber: "12345" };
-let interfaceDescriptor = { bInterfaceClass: ADB_VALUES.ADB_CLASS
-                          , bInterfaceSubClass: ADB_VALUES.ADB_SUBCLASS
-                          , bInterfaceProtocol: ADB_VALUES.ADB_PROTOCOL };
-let iface = { descriptor: interfaceDescriptor
-            , endpoints: endpoints };
-let device = { interfaces: [iface,]
-             , deviceDescriptor: deviceDescriptor
-             , configDescriptor: {}
-             , open: () => { return "nothing"; } };
-let adbDevice = { device: device
-                , deviceInterface: iface
-                , serialNumber: "12345" };
-let deviceArray = [adbDevice];
 
 describe('helper function tests', () => {
   describe('generateMessage tests', () => {
@@ -91,16 +69,6 @@ describe('helper function tests', () => {
       packetBuffer.writeUInt32LE(0, 12);
       let packet = packetFromBuffer(packetBuffer);
       (typeof packet.data).should.equal('undefined');
-    });
-  });
-  describe('selectBySerialNumber tests', () => {
-    it('should return a device if a device with that serial number is available', () => {
-      expect(selectBySerialNumber(deviceArray, "12345")).should.not.be.null;
-    });
-    it('should throw an error if there is no device with that serial number', () => {
-      () => {
-        selectBySerialNumber(deviceArray, "54321");
-      }.should.throw();
     });
   });
 });
