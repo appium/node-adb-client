@@ -61,6 +61,7 @@ class ADB {
       }
       return returnInterface;
     }
+    return null;
   }
   // *** END OF STATIC FUNCTIONS ***
 
