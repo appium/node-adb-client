@@ -24,13 +24,11 @@ class ADB {
     logExceptOnTest("Trying to find a usb device");
     let adbDevices = [];
     let usbDevices = usb.getDeviceList();
-    let deviceIndex = 0;
     for (let device of usbDevices) {
       let deviceInterface = this.getAdbInterface(device);
       if (deviceInterface !== null) {
         logExceptOnTest("Found an ADB device");
         adbDevices.push({device, deviceInterface});
-        deviceIndex++;
       }
     }
     return adbDevices;
