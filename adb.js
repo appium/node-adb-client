@@ -85,7 +85,7 @@ class ADB {
               this.state = SEND_PRIVATE_KEY;
             }
           } catch (e) {
-            if (e.errno) {
+            if (e.errno === 2) {
               console.log("Timeout error, this should never happen: ", this.state);
               this.state = NOT_CONNECTED;
             } else {
@@ -139,16 +139,18 @@ class ADB {
   async runCommand (command) {
     if (this.state === CONNECTED) {
       await this.device.open(command);
+    } else {
+      throw new Error("State is not CONNECTED, cannot run a command.");
     }
-    // else log, not ready to run a command/open a stream
   }
 
   async initConnection () {
     if (this.state === NOT_CONNECTED) {
       await this.device.initConnection();
       this.state = CONNECTED;
+    } else {
+      console.log("Already connected.");
     }
-    // else log maybe?
   }
 
   async closeConnection () {
