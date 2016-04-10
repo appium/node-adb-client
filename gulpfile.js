@@ -1,8 +1,8 @@
 "use strict";
 
 var gulp = require('gulp'),
-  Q = require('q') ,
-  exec = Q.denodeify(require('child_process').exec),
+  Promise = require('bluebird').Promise,
+  exec = Promise.promisify(require('child_process').exec),
   boilerplate = require('appium-gulp-plugins').boilerplate.use(gulp);
 
 gulp.task('node-gyp', function () {
