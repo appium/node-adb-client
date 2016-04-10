@@ -27,7 +27,6 @@
     "babel-runtime": "=6.6.1",
     "bluebird": "^3.3.4",
     "nan": "^2.1.0",
-    "q": "^1.4.1",
     "source-map-support": "^0.4.0",
     "underscore": "^1.8.3",
     "usb": "^1.0.6"
