@@ -23,7 +23,7 @@
     "lib": "lib"
   },
   "dependencies": {
-    "appium-support": "^2.2.0",
+    "appium-support": "^2.2.1",
     "asyncbox": "^2.0.4",
     "babel-runtime": "=6.6.1",
     "bluebird": "^3.3.4",
