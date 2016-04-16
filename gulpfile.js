@@ -1,6 +1,11 @@
 "use strict";
 
 var gulp = require('gulp'),
-    boilerplate = require('appium-gulp-plugins').boilerplate.use(gulp);
+  Promise = require('bluebird').Promise,
+  exec = Promise.promisify(require('child_process').exec),
+  boilerplate = require('appium-gulp-plugins').boilerplate.use(gulp);
 
-boilerplate({build: 'node-adb-client', jscs: false});
+gulp.task('node-gyp', function () {
+  return exec('node-gyp configure build');
+});
+boilerplate({build: 'node-adb-client', jscs: false, postTranspile: ['node-gyp']});
