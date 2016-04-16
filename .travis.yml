@@ -1,11 +1,13 @@
 language: node_js
 node_js:
   - "0.12"
-branches:
-  only:
-    - "master"
 addons:
   apt:
     packages:
     - build-essential
     - libudev-dev
+before_script:
+  - touch ~/.android/adbkey.pub
+  - touch ~/.android/adbkey
+  - echo "public" > ~/.android/adbkey.pub
+  - echo "private" > ~/.android/adbkey
