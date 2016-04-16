@@ -12,3 +12,5 @@ before_script:
   - touch ~/.android/adbkey
   - echo "public" > ~/.android/adbkey.pub
   - echo "private" > ~/.android/adbkey
+after_success:
+  - gulp coveralls
