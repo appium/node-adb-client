@@ -27,7 +27,7 @@ let interfaceDescriptor = { bInterfaceClass: ADB_VALUES.ADB_CLASS
                          , bInterfaceProtocol: ADB_VALUES.ADB_PROTOCOL };
 let iface = { descriptor: interfaceDescriptor
            , endpoints: endpoints };
-let device = { interfaces: [iface,]
+let device = { interfaces: [iface]
              , deviceDescriptor: deviceDescriptor
              , open: () => { return "nothing"; } };
 // let adbDevice = { device: device

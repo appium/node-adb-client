@@ -11,6 +11,7 @@ let usbStub = { '@noCallThru': true };
 let helpers = proxyquire('../../lib/helpers', {usb: usbStub });
 let generateMessage = helpers.generateMessage;
 let packetFromBuffer = helpers.packetFromBuffer;
+let getFileName = helpers.getFileName;
 
 import { ADB_COMMANDS, CONNECTION_TYPES } from '../../lib/constants';
 
@@ -69,6 +70,13 @@ describe('helper function tests', () => {
       packetBuffer.writeUInt32LE(0, 12);
       let packet = packetFromBuffer(packetBuffer);
       (typeof packet.data).should.equal('undefined');
+    });
+  });
+  describe('getFileName tests', () => {
+    it('should return a string with no /\'s', () => {
+      let filePath = "a/test/path";
+      let fileName = getFileName(filePath);
+      fileName.should.equal('path');
     });
   });
 });
