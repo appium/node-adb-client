@@ -7,6 +7,7 @@ addons:
     - build-essential
     - libudev-dev
 before_script:
+  - mkdir ~/.android
   - touch ~/.android/adbkey.pub
   - touch ~/.android/adbkey
   - echo "public" > ~/.android/adbkey.pub
