@@ -72,12 +72,12 @@ class ADB {
     while (1) {
       switch (this.state) {
         case NOT_CONNECTED:
-          console.log("NOT_CONNECTED");
+          logExceptOnTest("NOT_CONNECTED");
           await this.device.initConnection();
           this.state = WAIT_FOR_AUTH;
           break;
         case WAIT_FOR_AUTH:
-          console.log("WAIT_FOR_AUTH");
+          logExceptOnTest("WAIT_FOR_AUTH");
           try {
             packet = await this.device.waitForAuth();
             if (packet === false) {
@@ -87,7 +87,7 @@ class ADB {
             }
           } catch (e) {
             if (e.errno === 2) {
-              console.log("Timeout error, this should never happen: ", this.state);
+              logExceptOnTest("Timeout error, this should never happen: ", this.state);
               this.state = NOT_CONNECTED;
             } else {
               throw e;
@@ -95,7 +95,7 @@ class ADB {
           }
           break;
         case SEND_PRIVATE_KEY:
-          console.log("SEND_PRIVATE_KEY");
+          logExceptOnTest("SEND_PRIVATE_KEY");
           try {
             if (await this.device.sendSignedToken(packet.data)) {
               this.state = CONNECTED;
@@ -104,7 +104,7 @@ class ADB {
             }
           } catch (e) {
             if (e.errno === 2) {
-              console.log("Timeout error, this should never happen: ", this.state);
+              logExceptOnTest("Timeout error, this should never happen: ", this.state);
               this.state = NOT_CONNECTED;
             } else {
               throw e;
@@ -112,7 +112,7 @@ class ADB {
           }
           break;
         case SEND_PUBLIC_KEY:
-          console.log("SEND_PUBLIC_KEY");
+          logExceptOnTest("SEND_PUBLIC_KEY");
           try {
             if (await this.device.sendPublicKey()) {
               this.state = CONNECTED;
@@ -121,7 +121,7 @@ class ADB {
             }
           } catch (e) {
             if (e.errno === 2) { //timeout error
-              console.log("Timeout error, did you accept the public key on the device?");
+              logExceptOnTest("Timeout error, did you accept the public key on the device?");
               this.state = NOT_CONNECTED;
             } else {
               throw e;
@@ -129,7 +129,7 @@ class ADB {
           }
           break;
         case CONNECTED: // ready to start runing command on the device now
-          console.log("CONNECTED");
+          logExceptOnTest("CONNECTED");
           return;
         default: //wtf
           this.state = NOT_CONNECTED;
@@ -150,7 +150,7 @@ class ADB {
       await this.device.initConnection();
       this.state = CONNECTED;
     } else {
-      console.log("Already connected.");
+      logExceptOnTest("Already connected.");
     }
   }
 
