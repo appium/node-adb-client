@@ -5,6 +5,8 @@ import chaiAsPromised from 'chai-as-promised';
 import 'mochawait';
 import proxyquire from 'proxyquire';
 
+process.env.NODE_ENV = 'test';
+
 let usbStub = { '@noCallThru': true };
 let signLibStub = { '@noCallThru': true };
 // this proxyquire isn't working, gulp build will fail at unit tests
