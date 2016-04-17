@@ -11,11 +11,12 @@ const CONNECTED = 4;
 
 class ADB {
   constructor (connectionType, device) {
-    if (connectionType !== (CONNECTION_TYPES.USB || CONNECTION_TYPES.TCP)) {
+    if (connectionType === CONNECTION_TYPES.USB || connectionType === CONNECTION_TYPES.TCP) {
+      this.state = NOT_CONNECTED;
+      this.device = new ADBDevice(connectionType, device);
+    } else {
       throw new Error("Cannot create new ADB device, invalid connection type.");
     }
-    this.state = NOT_CONNECTED;
-    this.device = new ADBDevice(connectionType, device);
   }
 
   // *** STATIC FUNCTIONS ***
