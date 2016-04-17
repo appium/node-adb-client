@@ -138,11 +138,13 @@ class ADB {
   }
 
   async runCommand (command) {
+    let output = null;
     if (this.state === CONNECTED) {
-      await this.device.open(command);
+      output = await this.device.open(command);
     } else {
       throw new Error("State is not CONNECTED, cannot run a command.");
     }
+    return output;
   }
 
   async initConnection () {
