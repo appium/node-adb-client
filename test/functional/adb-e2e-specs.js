@@ -181,13 +181,13 @@ describe('node-adb-client', () => {
     // not using an arrow function so that the this context is correct for this.timeout
     it('should (the device) be available for commands after reboot', async function() {
       // override default timeout since we need to wait for the device to reboot
-      this.timeout(30000);
+      this.timeout(40000);
       let command = {
         type:   "reboot"
       };
       await device.runCommand(command);
       // sleep then connect to the device again
-      sleep.sleep(20); // time required before an S4 running Android 5 is available
+      sleep.sleep(30); // time required before an S4 running Android 5 is available
       availableDevices = ADB.findAdbDevices();
       // just select the first device
       device = new ADB(CONNECTION_TYPES.USB, availableDevices[0]);
