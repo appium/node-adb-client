@@ -6,7 +6,7 @@ import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import { fs } from 'appium-support';
 import { CONNECTION_TYPES } from '../../lib/constants';
-import sleep from 'sleep';
+import { sleep } from 'asyncbox';
 
 process.env.NODE_ENV = 'test';
 
@@ -187,21 +187,21 @@ describe('node-adb-client', () => {
       };
       await device.runCommand(command);
       // sleep then connect to the device again
-      sleep.sleep(30); // time required before an S4 running Android 5 is available
+      await sleep(30); // time required before an S4 running Android 5 is available
       availableDevices = ADB.findAdbDevices();
       // just select the first device
       device = new ADB(CONNECTION_TYPES.USB, availableDevices[0]);
       await device.connect();
       // run a very basic command to confirm device is okay
-      let commandString = "pwd";
-      let expectedReturnString = "/";
+      let commandString = "cd sdcard/ ; pwd";
+      let expectedReturnString = "/sdcard";
       let checkCommand = { // set print to false so we get the data back as a string
         type: "shell"
       , string: commandString
       , print: false
       };
       let output = await device.runCommand(checkCommand);
-      output.indexOf(expectedReturnString).should.not.equal(-1);
+      output.trim().should.equal(expectedReturnString);
     });
   });
 });
