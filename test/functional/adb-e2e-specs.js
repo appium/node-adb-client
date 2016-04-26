@@ -118,14 +118,30 @@ describe('node-adb-client', () => {
     });
   });
   describe('pull tests', () => {
+    const smallFile = path.resolve(__dirname, '..', '..', '..', 'test', 'fixtures', 'smallFile');
+    const largeFile = path.resolve(__dirname, '..', '..', '..', 'test', 'fixtures', 'largeFile');
     const tempTestPath = path.resolve(__dirname, '..', '..', '..', 'tempTest');
+    const push_destination = "sdcard/";
+
     before(async () => {
       await fs.mkdir(tempTestPath);
     });
     after(async () => {
       await fs.rimraf(tempTestPath);
     });
+
     it('should pull down all of smallFile', async () => {
+      // push smallfile before trying to pull it
+      const push_stats = await fs.stat(smallFile);
+      const smallFileSize = push_stats.size.toString();
+
+      let push_command = {
+        type:        "push"
+      , source:      smallFile
+      , destination: push_destination
+      };
+      await device.runCommand(push_command);
+
       let destination = `${tempTestPath}/smallFile`;
       let command = {
         type:        "pull"
@@ -137,6 +153,17 @@ describe('node-adb-client', () => {
       fileSize.should.equal(stats.size);
     });
     it('should pull down all of largeFile', async () => {
+      // push largefile before trying to pull it
+      const push_stats = await fs.stat(largeFile);
+      const largeFileSize = push_stats.size.toString();
+
+      let push_command = {
+        type:        "push"
+      , source:      largeFile
+      , destination: push_destination
+      };
+      await device.runCommand(push_command);
+
       let destination = `${tempTestPath}/largeFile`;
       let command = {
         type:        "pull"
@@ -172,7 +199,15 @@ describe('node-adb-client', () => {
     });
   });
   describe('uninstall tests', () => {
-    it('should uninstall the app we previously installed', async () => {
+    before(async () => {
+      const source = path.resolve(__dirname, '..', '..', '..', 'test', 'fixtures', 'ContactManager.apk');
+      const runApp = `${packageName}/${activityName}`;
+      await device.runCommand({ type: "install", source: source });
+      let output = await device.runCommand({ type: "shell"
+                                           , string: runApp
+                                           , print: false });
+    });
+    it('should uninstall the app we have installed', async () => {
       let output = await device.runCommand({ type: "uninstall", packageName: packageName });
       output.indexOf(`Success`).should.not.equal(-1);
     });
