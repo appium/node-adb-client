@@ -3,20 +3,12 @@
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import 'mochawait';
-import proxyquire from 'proxyquire';
+import { generateMessage, packetFromBuffer, getFileName } from '../../lib/helpers';
+import { ADB_COMMANDS, CONNECTION_TYPES } from '../../lib/constants';
 
 process.env.NODE_ENV = 'test';
 
-let usbStub = { '@noCallThru': true };
-let helpers = proxyquire('../../lib/helpers', {usb: usbStub });
-let generateMessage = helpers.generateMessage;
-let packetFromBuffer = helpers.packetFromBuffer;
-let getFileName = helpers.getFileName;
-
-import { ADB_COMMANDS, CONNECTION_TYPES } from '../../lib/constants';
-
 chai.should();
-// let expect = chai.expect;
 chai.use(chaiAsPromised);
 
 describe('helper function tests', () => {
