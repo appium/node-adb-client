@@ -132,9 +132,6 @@ describe('node-adb-client', () => {
 
     it('should pull down all of smallFile', async () => {
       // push smallfile before trying to pull it
-      const push_stats = await fs.stat(smallFile);
-      const smallFileSize = push_stats.size.toString();
-
       let push_command = {
         type:        "push"
       , source:      smallFile
@@ -154,9 +151,6 @@ describe('node-adb-client', () => {
     });
     it('should pull down all of largeFile', async () => {
       // push largefile before trying to pull it
-      const push_stats = await fs.stat(largeFile);
-      const largeFileSize = push_stats.size.toString();
-
       let push_command = {
         type:        "push"
       , source:      largeFile
@@ -203,9 +197,9 @@ describe('node-adb-client', () => {
       const source = path.resolve(__dirname, '..', '..', '..', 'test', 'fixtures', 'ContactManager.apk');
       const runApp = `${packageName}/${activityName}`;
       await device.runCommand({ type: "install", source: source });
-      let output = await device.runCommand({ type: "shell"
-                                           , string: runApp
-                                           , print: false });
+      await device.runCommand({ type: "shell"
+                              , string: runApp
+                              , print: false });
     });
     it('should uninstall the app we have installed', async () => {
       let output = await device.runCommand({ type: "uninstall", packageName: packageName });
