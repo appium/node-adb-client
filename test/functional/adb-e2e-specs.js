@@ -107,7 +107,7 @@ describe('node-adb-client', () => {
       let output = await device.runCommand(lsCommand);
       output.indexOf(largeFileSize).should.not.equal(-1);
     });
-    it('should return -1 if the source file doesn\'t exist', async () => {
+    it('should return -1 if the source file does not exist', async () => {
       let command = {
         type:        "push"
       , source:      path.resolve(__dirname, 'nonExistantFile')
@@ -168,7 +168,7 @@ describe('node-adb-client', () => {
       let stats = await fs.stat(destination);
       fileSize.should.equal(stats.size);
     });
-    it('should return a filesize of -1 if the file doesn\'t exist', async () => {
+    it('should return a filesize of -1 if the file does not exist', async () => {
       // try and pull a file we just pushed to the device
       // except leave off the file extension
       let command = {

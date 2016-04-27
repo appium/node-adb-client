@@ -126,7 +126,7 @@ describe('adb-device', () => {
       await adbDevice.open(command);
       mocks.adbDevice.verify;
     });
-    it('should not call push if fs.stat errors because the file doesn\'t exist', async () => {
+    it('should not call push if fs.stat errors because the file does not exist', async () => {
       let command = {
         type: "push"
       , source: "nonExistantFile"
