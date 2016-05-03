@@ -4,19 +4,18 @@ import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import 'mochawait';
 import proxyquire from 'proxyquire';
-import USBDevice from '../../lib/usb-device';
-import { withMocks } from 'appium-test-support';
-import { ADB_VALUES, LIBUSB_VALUES, CONNECT_VALUES
-       , ADB_COMMANDS, CONNECTION_TYPES } from '../../lib/constants';
+import { verify, withMocks } from 'appium-test-support';
+import { ADB_VALUES
+       , LIBUSB_VALUES
+       , CONNECTION_TYPES } from '../../lib/constants';
 import ADBDevice from '../../lib/adb-device';
-import { generateMessage, packetFromBuffer } from '../../lib/helpers';
-import { fs } from 'appium-support';
+import USBDevice from '../../lib/usb-device';
 
 process.env.NODE_ENV = 'test';
 
+// for proxyquire
 let usbStub = { '@noCallThru': true };
 let signLibStub = { '@noCallThru': true };
-// this proxyquire isn't working, gulp build will fail at unit tests
 let adbDeviceStub = proxyquire('../../lib/adb-device', { 'signLib': signLibStub });
 let adb = proxyquire('../../adb', { 'usb': usbStub, 'adb-device': adbDeviceStub });
 const LIBUSB_ENDPOINT_IN = LIBUSB_VALUES.LIBUSB_ENDPOINT_IN
@@ -26,10 +25,10 @@ chai.should();
 let expect = chai.expect;
 chai.use(chaiAsPromised);
 
-describe('static function tests', () => {
+describe('static functions', () => {
   // fake device setup
   let endpoints = [LIBUSB_ENDPOINT_IN, LIBUSB_ENDPOINT_OUT ];
-  let deviceDescriptor = { idVendor: 0x04e8 // samsung
+  let deviceDescriptor = { idVendor: null
                         , iSerialNumber: "12345" };
   let interfaceDescriptor = { bInterfaceClass: ADB_VALUES.ADB_CLASS
                            , bInterfaceSubClass: ADB_VALUES.ADB_SUBCLASS
@@ -39,9 +38,13 @@ describe('static function tests', () => {
   let device = { interfaces: [iface]
                , deviceDescriptor: deviceDescriptor
                , open: () => { return "nothing"; } };
-  describe('getAdbInterface tests', () => {
+  describe('getAdbInterface', () => {
+    it('should return null if the interface vendor is not one we recognze', () => {
+      expect(adb.getAdbInterface(device)).to.be.a('null');
+    });
     it('should return an interface if there is one for ADB comms', () => {
-        adb.getAdbInterface(device).should.not.be.null;
+      deviceDescriptor.idVendor = 0x04e8; // samsung
+      adb.getAdbInterface(device).should.not.be.null;
     });
     it('should return null if there are interfaces but no ADB interface', () => {
       iface.descriptor.bInterfaceClass = 100;
@@ -52,164 +55,234 @@ describe('static function tests', () => {
       expect(adb.getAdbInterface(device)).to.be.a('null');
     });
   });
-  describe('findAdbDevices tests', () => {
-    usbStub.getDeviceList = ()=> { return [device]; };
-    it('should return an array with a length of zero', () => {
-      expect(adb.findAdbDevices()).to.be.empty;
+  describe('findAdbDevices', withMocks({ usbStub}, (mocks) => {
+    usbStub.getDeviceList = () => { return "nothing"; };
+    it('should throw an error if there are no usb devices', () => {
+      mocks.usbStub.expects('getDeviceList')
+        .once()
+        .returns([]);
+      () => {
+        adb.findAdbDevices();
+      }.should.throw("No USB devices found.");
+      mocks.usbStub.verify();
+    });
+    it('should throw an error if none of the usb devices have ADB interfaces', () => {
+      mocks.usbStub.expects('getDeviceList')
+        .once()
+        .returns([device]);
+      () => {
+        adb.findAdbDevices();
+      }.should.throw("No ADB devices found.");
+      mocks.usbStub.verify();
     });
     it('should return an object if there was a device with an adb interface', () => {
       device.interfaces = [iface];
       iface.descriptor.bInterfaceClass = 255;
+      mocks.usbStub.expects('getDeviceList')
+        .once()
+        .returns([device]);
       expect(adb.findAdbDevices()).to.not.be.empty;
+      mocks.usbStub.verify();
     });
-  });
+  }));
 });
-describe('adb-device', () => {
-  let inputEndpoint = { transferAsync: () => { return "nothing"; } };
-  let outputEndpoint = { transferAsync: () => { return "nothing"; } };
+
+describe('adb', () => {
   let usbDevice = new USBDevice();
-  usbDevice.inputEndpoint = inputEndpoint;
-  usbDevice.outputEndpoint = outputEndpoint;
+  let adbObj = new adb(CONNECTION_TYPES.USB, usbDevice); // state: NOT_CONNECTED
   let adbDevice = new ADBDevice(CONNECTION_TYPES.USB, usbDevice);
-  adbDevice.device = usbDevice;
-  let localId, remoteId = 12345;
-  describe('recvAndOkay', withMocks({ usbDevice }, (mocks) => {
-    it('should call _sendMsg with command okay', async () => {
-      mocks.usbDevice.expects('_recvMsg')
-        .once()
-        .withExactArgs(CONNECT_VALUES.CONNECT_MAXDATA);
-      mocks.usbDevice.expects('_sendMsg')
-        .once()
-        .withExactArgs(ADB_COMMANDS.CMD_OKAY, localId, remoteId, "");
-      await adbDevice.recvAndOkay(localId, remoteId);
-      mocks.usbDevice.verify();
-    });
-  }));
-  describe('sendAndOkay', withMocks({ usbDevice }, (mocks) => {
-    it('should throw an error containing the command type if the command was not OKAY', async () => {
-      let fakePacket = packetFromBuffer(generateMessage(ADB_COMMANDS.CMD_CLSE, localId, remoteId, ""));
-      mocks.usbDevice.expects('_sendMsg')
-        .once()
-        .withExactArgs(ADB_COMMANDS.CMD_WRTE, localId, remoteId, "test");
-      mocks.usbDevice.expects('_recvMsg')
-        .once()
-        .withExactArgs(CONNECT_VALUES.CONNECT_MAXDATA)
-        .returns(fakePacket);
-      await adbDevice.sendAndOkay(ADB_COMMANDS.CMD_WRTE, localId, remoteId, "test")
-              .should.be.rejected;
-      mocks.usbDevice.verify();
-    });
-    it('should return a packet with command type OKAY if command was OKAY', async () => {
-      let fakePacket = packetFromBuffer(generateMessage(ADB_COMMANDS.CMD_OKAY, localId, remoteId, ""));
-      mocks.usbDevice.expects('_sendMsg')
-        .once()
-        .withExactArgs(ADB_COMMANDS.CMD_WRTE, localId, remoteId, "test");
-      mocks.usbDevice.expects('_recvMsg')
-        .once()
-        .withExactArgs(CONNECT_VALUES.CONNECT_MAXDATA)
-        .returns(fakePacket);
-      await adbDevice.sendAndOkay(ADB_COMMANDS.CMD_WRTE, localId, remoteId, "test")
-            .should.be.fulfilled;
-      mocks.usbDevice.verify();
-    });
-  }));
-  describe('open', withMocks({ adbDevice, fs }, (mocks) => {
-    it('should call shell if command.type is shell', async () => {
-      let command = {
-        type: "shell"
-      , string: "ls -al"
-      , print: false
-      };
-      mocks.adbDevice.expects('shell')
-        .once()
-        .withExactArgs(command.string, command.print);
-      await adbDevice.open(command);
-      mocks.adbDevice.verify;
-    });
-    it('should not call push if fs.stat errors because the file does not exist', async () => {
-      let command = {
-        type: "push"
-      , source: "nonExistantFile"
-      , destination: "doesntMatter"
-      };
-      mocks.fs.expects('stat')
-        .once()
-        .withExactArgs(command.source)
-        .throws();
-      mocks.adbDevice.expects('push')
+  adbObj.device = adbDevice;
+  const NOT_CONNECTED = 0;
+  const CONNECTED = 4;
+
+  describe('runCommand', withMocks({ adbDevice }, (mocks) => {
+    it('should reject with an error if state is not connected', async () => {
+      let command = "test";
+      mocks.adbDevice.expects('open')
         .never();
-      await adbDevice.open(command);
-      mocks.fs.verify();
-      mocks.adbDevice.verify();
+      await adbObj.runCommand(command).should.be.rejected;
+      verify(mocks);
     });
-    it('should call push if fs.stat does not error', async () => {
-      let command = {
-        type: "push"
-      , source: "existantFile"
-      , destination: "doesntMatter"
-      };
-      mocks.fs.expects('stat')
+    it('should resolve if state is connected', async () => {
+      let command = "test";
+      adbObj.state = CONNECTED;
+      mocks.adbDevice.expects('open')
         .once()
-        .withExactArgs(command.source)
-        .returns();
-      mocks.adbDevice.expects('push')
+        .withExactArgs(command);
+      await adbObj.runCommand(command).should.be.resolved;
+      verify(mocks);
+    });
+    it('should return some output if device.open returned some output', async () => {
+      const CONNECTED = 4;
+      let command = "test";
+      adbObj.state = CONNECTED;
+      mocks.adbDevice.expects('open')
+        .once()
+        .withExactArgs(command)
+        .returns(command);
+      let output = await adbObj.runCommand(command);
+      output.should.equal(command);
+      verify(mocks);
+    });
+    it('should return undefined if device.open returned undefined', async () => {
+      const CONNECTED = 4;
+      let command = "test";
+      adbObj.state = CONNECTED;
+      mocks.adbDevice.expects('open')
+        .once()
+        .withExactArgs(command)
+        .returns(undefined);
+      let output = await adbObj.runCommand(command);
+      expect(output).to.be.an('undefined');
+      verify(mocks);
+    });
+  }));
+  describe('initConnection', withMocks({ adbDevice }, (mocks) => {
+    it('should call device.initConnection if state is NOT_CONNECTED', async () => {
+      adbObj.state = NOT_CONNECTED;
+      mocks.adbDevice.expects('initConnection')
         .once();
-      await adbDevice.open(command);
-      mocks.fs.verify();
-      mocks.adbDevice.verify();
+      await adbObj.initConnection();
+      adbObj.state.should.equal(CONNECTED);
+      verify(mocks);
     });
-    it('should call pull if command.type is pull', async () => {
-      let command = {
-        type: "pull"
-      , source: "test"
-      , destination: "testTwo"
-      };
-      mocks.adbDevice.expects('pull')
-        .once()
-        .withExactArgs(command.source, command.destination);
-      await adbDevice.open(command);
-      mocks.adbDevice.verify;
+    it('should not call device.initConnection if state is CONNECTED', async () => {
+      adbObj.state = CONNECTED;
+      mocks.adbDevice.expects('initConnection')
+        .never();
+      await adbObj.initConnection();
+      adbObj.state.should.equal(CONNECTED);
+      verify(mocks);
     });
-    it('should call install if command.type is install', async () => {
-      let command = {
-        type: "install"
-      , source: "test.apk"
-      };
-      mocks.adbDevice.expects('install')
-        .once()
-        .withExactArgs(command.source);
-      await adbDevice.open(command);
-      mocks.adbDevice.verify;
-    });
-    it('should call uninstall if command.type is uninstall', async () => {
-      let command = {
-        type: "uninstall"
-      , packageName: "testPackage"
-      };
-      mocks.adbDevice.expects('uninstall')
-        .once()
-        .withExactArgs(command.packageName);
-      await adbDevice.open(command);
-      mocks.adbDevice.verify;
-    });
-    it('should call reboot if command.type is reboot', async () => {
-      let command = {
-        type: "reboot"
-      };
-      mocks.adbDevice.expects('reboot')
+  }));
+  describe('closeConnection', withMocks({ adbDevice }, (mocks) => {
+    it('should call device.closeConnection if state is CONNECTED', async () => {
+      adbObj.state = CONNECTED;
+      mocks.adbDevice.expects('closeConnection')
         .once();
-      await adbDevice.open(command);
-      mocks.adbDevice.verify();
+      await adbObj.closeConnection();
+      adbObj.state.should.equal(NOT_CONNECTED);
+      verify(mocks);
     });
-    // it('should call uninstall if command.type is uninstall', async () => {
-    //   let command = {
-    //     packageName: "testPackage"
-    //   };
-    //   mocks.adbDevice.expects('uninstall')
-    //     .once()
-    //     .withExactArgs(command.source);
-    //   await adbDevice.open(command);
-    //   mocks.adbDevice.verify;
-    // });
+    it('should not call device.closeConnection if state is NOT_CONNECTED', async () => {
+      adbObj.state = NOT_CONNECTED;
+      mocks.adbDevice.expects('closeConnection')
+        .never();
+      await adbObj.closeConnection();
+      adbObj.state.should.equal(NOT_CONNECTED);
+      verify(mocks);
+    });
+  }));
+  describe('connect', withMocks({ adbDevice }, (mocks) => {
+    it('should call device.initConnection twice if first waitForAuth returns false', async () => {
+      adbObj.state = NOT_CONNECTED;
+      mocks.adbDevice.expects('initConnection')
+        .twice();
+      mocks.adbDevice.expects('waitForAuth')
+        .twice()
+        .onFirstCall()
+        .returns(false)
+        .onSecondCall()
+        .returns(true);
+      mocks.adbDevice.expects('sendSignedToken')
+        .once()
+        .returns(true);
+      await adbObj.connect();
+      adbObj.state.should.equal(CONNECTED);
+      verify(mocks);
+    });
+    it('should call device.sendPublicKey if device.sendSignedToken returns false', async () => {
+      adbObj.state = NOT_CONNECTED;
+      mocks.adbDevice.expects('initConnection')
+        .once();
+      mocks.adbDevice.expects('waitForAuth')
+        .once()
+        .returns(true);
+      mocks.adbDevice.expects('sendSignedToken')
+        .once()
+        .returns(false);
+      mocks.adbDevice.expects('sendPublicKey')
+        .once()
+        .returns(true);
+      await adbObj.connect();
+      adbObj.state.should.equal(CONNECTED);
+      verify(mocks);
+    });
+    it('should call device.sendPublicKey twice if device.sendSignedToken returns false', async () => {
+      adbObj.state = NOT_CONNECTED;
+      mocks.adbDevice.expects('initConnection')
+        .twice();
+      mocks.adbDevice.expects('waitForAuth')
+        .twice()
+        .returns(true);
+      mocks.adbDevice.expects('sendSignedToken')
+        .twice()
+        .returns(false);
+      mocks.adbDevice.expects('sendPublicKey')
+        .twice()
+        .onFirstCall()
+        .returns(false)
+        .onSecondCall()
+        .returns(true);
+      await adbObj.connect();
+      adbObj.state.should.equal(CONNECTED);
+      verify(mocks);
+    });
+    it('should restart the entire loop if waitForAuth times out', async () => {
+      adbObj.state = NOT_CONNECTED;
+      mocks.adbDevice.expects('initConnection')
+        .twice();
+      mocks.adbDevice.expects('waitForAuth')
+        .twice()
+        .onFirstCall()
+        .throws({errno: 2})
+        .onSecondCall()
+        .returns(true);
+      mocks.adbDevice.expects('sendSignedToken')
+        .once()
+        .returns(true);
+      await adbObj.connect();
+      adbObj.state.should.equal(CONNECTED);
+      verify(mocks);
+    });
+    it('should restart the entire loop if sendSignedToken times out', async () => {
+      adbObj.state = NOT_CONNECTED;
+      mocks.adbDevice.expects('initConnection')
+        .twice();
+      mocks.adbDevice.expects('waitForAuth')
+        .twice()
+        .returns(true);
+      mocks.adbDevice.expects('sendSignedToken')
+        .twice()
+        .onFirstCall()
+        .throws({errno: 2})
+        .onSecondCall()
+        .returns(true);
+      await adbObj.connect();
+      adbObj.state.should.equal(CONNECTED);
+      verify(mocks);
+    });
+    it('should restart the entire loop if sendPublicKey times out', async () => {
+      adbObj.state = NOT_CONNECTED;
+      mocks.adbDevice.expects('initConnection')
+        .twice();
+      mocks.adbDevice.expects('waitForAuth')
+        .twice()
+        .returns(true);
+      mocks.adbDevice.expects('sendSignedToken')
+        .twice()
+        .returns(false);
+      mocks.adbDevice.expects('sendPublicKey')
+        .twice()
+        .onFirstCall()
+        .throws({errno: 2})
+        .onSecondCall()
+        .returns(true);
+      await adbObj.connect();
+      adbObj.state.should.equal(CONNECTED);
+      verify(mocks);
+    });
   }));
 });
+
+
