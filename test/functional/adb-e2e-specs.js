@@ -67,8 +67,20 @@ describe('node-adb-client', () => {
     });
   });
   describe('push tests', () => {
-    const smallFile = path.resolve(__dirname, '..', '..', '..', 'test', 'fixtures', 'smallFile');
-    const largeFile = path.resolve(__dirname, '..', '..', '..', 'test', 'fixtures', 'largeFile');
+    const smallFile = path.resolve(__dirname
+                                  , '..'
+                                  , '..'
+                                  , '..'
+                                  , 'test'
+                                  , 'fixtures'
+                                  , 'smallFile');
+    const largeFile = path.resolve(__dirname
+                                  , '..'
+                                  , '..'
+                                  , '..'
+                                  , 'test'
+                                  , 'fixtures'
+                                  , 'largeFile');
     const destination = "sdcard/";
 
     it('should upload smallFile to device', async () => {
