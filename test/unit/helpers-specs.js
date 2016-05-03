@@ -3,7 +3,10 @@
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import 'mochawait';
-import { generateMessage, packetFromBuffer, getFileName } from '../../lib/helpers';
+import { generateMessage
+       , packetFromBuffer
+       , getFileName
+       , parseFileData } from '../../lib/helpers';
 import { ADB_COMMANDS, CONNECTION_TYPES } from '../../lib/constants';
 
 process.env.NODE_ENV = 'test';
@@ -11,8 +14,8 @@ process.env.NODE_ENV = 'test';
 chai.should();
 chai.use(chaiAsPromised);
 
-describe('helper function tests', () => {
-  describe('generateMessage tests', () => {
+describe('helpers', () => {
+  describe('generateMessage', () => {
     it('should throw error when invalid command is passed', () => {
       () => {
         generateMessage(1, 0, 0, "payload", CONNECTION_TYPES.USB);
@@ -34,7 +37,7 @@ describe('helper function tests', () => {
       usbMsg.length.should.equal(24);
     });
   });
-  describe('packtFromBuffer tests', () => {
+  describe('packtFromBuffer', () => {
     // fake packet buffer
     let payloadBuffer = new Buffer("payload");
     let packetBuffer = new Buffer(30);
@@ -64,11 +67,36 @@ describe('helper function tests', () => {
       (typeof packet.data).should.equal('undefined');
     });
   });
-  describe('getFileName tests', () => {
+  describe('getFileName', () => {
     it('should return a string with no /\'s', () => {
       let filePath = "a/test/path";
       let fileName = getFileName(filePath);
       fileName.should.equal('path');
+    });
+  });
+  describe('parseFileData', () => {
+    it('should return a buffer with none of the ADB protocol info', () => {
+      // this test is not great, but better than nothing
+      // lazy buffer creation
+      let oneSize = 512, twoSize = 496;
+      let dataIndicator = new Buffer("DATA"), doneIndicator = new Buffer("DONE");
+      let dataOne = new Buffer(oneSize).fill('a'), dataTwo = new Buffer(twoSize).fill('b');
+      let sizeOne = new Buffer(4), sizeTwo = new Buffer(4);
+      sizeOne.writeUInt32LE(oneSize);
+      sizeTwo.writeUInt32LE(twoSize);
+      let fakeBuffer = new Buffer("");
+      // concat them all
+      fakeBuffer = Buffer.concat([dataIndicator
+                                , sizeOne
+                                , dataOne
+                                , dataIndicator
+                                , sizeTwo
+                                , dataTwo
+                                , doneIndicator]);
+      let parsedData = parseFileData(fakeBuffer);
+      fakeBuffer.length.should.be.above(parsedData.length);
+      parsedData.toString().indexOf('DATA').should.equal(-1);
+      parsedData.toString().indexOf('DONE').should.equal(-1);
     });
   });
 });
