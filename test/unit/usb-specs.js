@@ -1,23 +1,25 @@
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import { withMocks } from 'appium-test-support';
+import { verify, withMocks } from 'appium-test-support';
 import USBDevice from '../../lib/usb-device';
-import { CONNECT_VALUES, ADB_COMMANDS } from '../../lib/constants';
+import { CONNECT_VALUES
+       , ADB_COMMANDS
+       , LIBUSB_VALUES } from '../../lib/constants';
 import { generateMessage } from '../../lib/helpers';
-// import { LIBUSB_VALUES,ADB_VALUES } from '../../lib/constants';
+
+const LIBUSB_TRANSFER_TYPE_BULK = LIBUSB_VALUES.LIBUSB_TRANSFER_TYPE_BULK;
 
 chai.should();
 chai.use(chaiAsPromised);
 
 describe('usb-device unit tests', () => {
-  // let LIBUSB_ENDPOINT_IN = LIBUSB_VALUES.LIBUSB_ENDPOINT_IN;
-  // let LIBUSB_ENDPOINT_OUT = LIBUSB_VALUES.LIBUSB_ENDPOINT_OUT;
-  // let endpoints = null;
   let inputEndpoint = { transferAsync: () => { return "nothing"; } };
   let outputEndpoint = { transferAsync: () => { return "nothing"; } };
   let usbDevice = new USBDevice();
-  usbDevice.inputEndpoint = inputEndpoint;
-  usbDevice.outputEndpoint = outputEndpoint;
+  beforeEach(() => {
+    usbDevice.inputEndpoint = inputEndpoint;
+    usbDevice.outputEndpoint = outputEndpoint;
+  });
   // describe('claimDevice', withMocks({ usbDevice }, (mocks) => {
   //   before(() => {
   //     endpoints = [LIBUSB_ENDPOINT_IN, LIBUSB_ENDPOINT_OUT ];
@@ -37,6 +39,22 @@ describe('usb-device unit tests', () => {
   //     usbDevice.inputEndpoint.should.equal(endpoints[1]);
   //   });
   // }));
+  describe('setEndpoints', () => {
+    it('should set inputEndpoint to endpoints[0] if endpoints[0].direction is in', async () => {
+      let endpoints = [ { direction: 'in', transferType: null }
+                      , { direction: 'out', transferType: null }];
+      usbDevice.setEndpoints(endpoints);
+      usbDevice.inputEndpoint.direction.should.equal(endpoints[0].direction);
+      usbDevice.inputEndpoint.transferType.should.equal(LIBUSB_TRANSFER_TYPE_BULK);
+    });
+    it('should set inputEndpoint to endpoints[1] if endpoints[1].direction is in', async () => {
+      let endpoints = [ { direction: 'out', transferType: null }
+                      , { direction: 'in', transferType: null }];
+      usbDevice.setEndpoints(endpoints);
+      usbDevice.inputEndpoint.direction.should.equal(endpoints[1].direction);
+      usbDevice.inputEndpoint.transferType.should.equal(LIBUSB_TRANSFER_TYPE_BULK);
+    });
+  });
   describe('_sendMsg', withMocks({ usbDevice, outputEndpoint}, (mocks) => {
     it('should call outputEndpoint.transferAsync once if no payload', async () => {
       let fakePacket = generateMessage(ADB_COMMANDS.CMD_OKAY, 12345, 12345, "");
@@ -45,15 +63,14 @@ describe('usb-device unit tests', () => {
         .withExactArgs(fakePacket)
         .returns();
       await usbDevice._sendMsg(ADB_COMMANDS.CMD_OKAY, 12345, 12345, "");
-      mocks.outputEndpoint.verify();
+      verify(mocks);
     });
     it('should call outputEndpoint.transferAsync twice if there is a data payload', async () => {
-      // let fakePacket = generateMessage(ADB_COMMANDS.CMD_OKAY, 12345, 12345, "test");
       mocks.outputEndpoint.expects('transferAsync')
         .twice()
         .returns();
       await usbDevice._sendMsg(ADB_COMMANDS.CMD_OKAY, 12345, 12345, "test");
-      mocks.outputEndpoint.verify();
+      verify(mocks);
     });
   }));
   describe('_recvMsg', withMocks({ usbDevice, inputEndpoint }, (mocks) => {
@@ -80,6 +97,7 @@ describe('usb-device unit tests', () => {
         .never();
       let packet = await usbDevice._recvMsg(CONNECT_VALUES.CONNECT_MAXDATA);
       packet.dataLen.should.equal(0);
+      verify(mocks);
     });
     it('should return a packet with the correct dataLen when there was a data payload', async () => {
       // set up the buffer, we don't really care about the crc at byte 16-19
@@ -99,6 +117,7 @@ describe('usb-device unit tests', () => {
         .returns(payloadBuffer);
       let packet = await usbDevice._recvMsg(CONNECT_VALUES.CONNECT_MAXDATA);
       packet.data.length.should.equal(packet.dataLen);
+      verify(mocks);
     });
   }));
   describe('getPacketData', withMocks({ usbDevice, inputEndpoint }, (mocks) => {
@@ -110,8 +129,8 @@ describe('usb-device unit tests', () => {
         .withExactArgs(CONNECT_VALUES.CONNECT_MAXDATA)
         .returns(testBuffer);
       let packetData = await usbDevice.getPacketData(CONNECT_VALUES.CONNECT_MAXDATA, dataLen);
-      mocks.inputEndpoint.verify();
       packetData.length.should.equal(dataLen);
+      verify(mocks);
     });
     it('should call transferAsync at least twice if dataLen > maxdata (4096)', async () => {
       let dataLen = 8000;
@@ -124,8 +143,8 @@ describe('usb-device unit tests', () => {
         .onSecondCall()
         .returns(new Buffer(dataLen - CONNECT_VALUES.CONNECT_MAXDATA));
       let packetData = await usbDevice.getPacketData(CONNECT_VALUES.CONNECT_MAXDATA, dataLen);
-      mocks.inputEndpoint.verify();
       packetData.length.should.equal(dataLen);
+      verify(mocks);
     });
   }));
 });

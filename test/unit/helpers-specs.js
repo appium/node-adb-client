@@ -48,8 +48,6 @@ describe('helpers', () => {
     packetBuffer.writeUInt32LE(0, 16);
     packetBuffer.writeUInt32LE(0, 20);
     packetBuffer.write("payload", 24, 7);
-    // copy the data into the packet
-    // payloadBuffer.copy(payloadBuffer, 24);
     it('should throw an error if we pass less than 24 bytes of data', () => {
       () => {
         let buf = new Buffer(23);

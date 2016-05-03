@@ -3,16 +3,11 @@ import { fs } from 'appium-support';
 import chaiAsPromised from 'chai-as-promised';
 import { withMocks, verify } from 'appium-test-support';
 import USBDevice from '../../lib/usb-device';
-// import proxyquire from 'proxyquire';
 import ADBDevice from '../../lib/adb-device';
 import { CONNECT_VALUES
        , ADB_COMMANDS
        , CONNECTION_TYPES } from '../../lib/constants';
 import { generateMessage, packetFromBuffer } from '../../lib/helpers';
-
-// let fsStub = { '@noCallThru': true };
-// let ADBDevice = proxyquire('../../lib/adb-device', { 'fs': fs });
-// fsStub.stat = () => { return "nothing"; };
 
 process.env.NODE_ENV = 'test';
 

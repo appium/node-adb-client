@@ -10,8 +10,6 @@ import { sleep } from 'asyncbox';
 
 process.env.NODE_ENV = 'test';
 
-// const should = chai.should();
-// const expect = chai.expect;
 chai.use(chaiAsPromised);
 chai.should();
 
