@@ -25,12 +25,20 @@ class ADB {
     logExceptOnTest("Trying to find a usb device");
     let adbDevices = [];
     let usbDevices = usb.getDeviceList();
+    // node-usb docs are unclear on if this will ever happen
+    // or if libusb throws it's own error for no devices
+    if (usbDevices.length === 0) {
+      throw new Error("No USB devices found.");
+    }
     for (let device of usbDevices) {
       let deviceInterface = this.getAdbInterface(device);
       if (deviceInterface !== null) {
         logExceptOnTest("Found an ADB device");
         adbDevices.push({device, deviceInterface});
       }
+    }
+    if (adbDevices.length === 0) {
+      throw new Error("No ADB devices found.");
     }
     return adbDevices;
   }
@@ -147,6 +155,7 @@ class ADB {
     return output;
   }
 
+  // I don't think this function is even being used?
   async initConnection () {
     if (this.state === NOT_CONNECTED) {
       await this.device.initConnection();
@@ -159,6 +168,9 @@ class ADB {
   async closeConnection () {
     if (this.state === CONNECTED) {
       await this.device.closeConnection();
+      this.state = NOT_CONNECTED;
+    } else {
+      logExceptOnTest("Not connection to close.");
     }
   }
 }
