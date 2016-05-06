@@ -14,13 +14,13 @@ chai.use(chaiAsPromised);
 chai.should();
 
 // these test require a device connected via usb
-describe('node-adb-client', () => {
+describe('adb-e2e', () => {
   let device = null;
   let availableDevices = null;
   const packageName = "com.example.android.contactmanager";
   const activityName = ".ContactManager";
   before(async () => {
-    availableDevices = ADB.findAdbDevices();
+    availableDevices = await ADB.findAdbDevices();
     // just select the first device
     device = new ADB(CONNECTION_TYPES.USB, availableDevices[0]);
     await device.connect();
@@ -29,7 +29,7 @@ describe('node-adb-client', () => {
    await device.closeConnection();
   });
 
-  describe('shell tests', async () => {
+  describe('shell', async () => {
     it('should return a not found message for an unknown command', async () => {
       let commandString = "asdf";
       let expectedReturnString = `/system/bin/sh: ${commandString}: not found`;
@@ -64,7 +64,7 @@ describe('node-adb-client', () => {
       output.indexOf(expectedReturnString).should.not.equal(-1);
     });
   });
-  describe('push tests', () => {
+  describe('push', () => {
     const smallFile = path.resolve(__dirname
                                   , '..'
                                   , '..'
@@ -99,7 +99,7 @@ describe('node-adb-client', () => {
       let output = await device.runCommand(lsCommand);
       output.indexOf(smallFileSize).should.not.equal(-1);
     });
-    it('shoud upload largeFile to device', async () => {
+    it('should upload largeFile to device', async () => {
       const stats = await fs.stat(largeFile);
       const largeFileSize = stats.size.toString();
 
@@ -127,7 +127,7 @@ describe('node-adb-client', () => {
       retValue.should.equal(-1);
     });
   });
-  describe('pull tests', () => {
+  describe('pull', () => {
     const smallFile = path.resolve(__dirname, '..', '..', '..', 'test', 'fixtures', 'smallFile');
     const largeFile = path.resolve(__dirname, '..', '..', '..', 'test', 'fixtures', 'largeFile');
     const tempTestPath = path.resolve(__dirname, '..', '..', '..', 'tempTest');
@@ -190,8 +190,9 @@ describe('node-adb-client', () => {
       output.should.equal(-1);
     });
   });
-  describe('install tests', () => {
-    it('should be able to install and run an app', async () => {
+  describe('install', () => {
+    it('should be able to install and run an app', async function () {
+      this.timeout(8000);
       const source = path.resolve(__dirname, '..', '..', '..', 'test', 'fixtures', 'ContactManager.apk');
       const runApp = `${packageName}/${activityName}`;
       await device.runCommand({ type: "install", source: source });
@@ -202,7 +203,7 @@ describe('node-adb-client', () => {
       output.indexOf(errorMsg).should.equal(-1);
     });
   });
-  describe('uninstall tests', () => {
+  describe('uninstall', () => {
     before(async () => {
       const source = path.resolve(__dirname, '..', '..', '..', 'test', 'fixtures', 'ContactManager.apk');
       const runApp = `${packageName}/${activityName}`;
@@ -216,18 +217,18 @@ describe('node-adb-client', () => {
       output.indexOf(`Success`).should.not.equal(-1);
     });
   });
-  describe('reboot tests', () => {
+  describe('reboot', () => {
     // not using an arrow function so that the this context is correct for this.timeout
-    it('should (the device) be available for commands after reboot', async function() {
+    it('should (the device) be available for commands after reboot', async function () {
       // override default timeout since we need to wait for the device to reboot
-      this.timeout(40000);
+      this.timeout(30000);
       let command = {
         type:   "reboot"
       };
       await device.runCommand(command);
       // sleep then connect to the device again
-      await sleep(30); // time required before an S4 running Android 5 is available
-      availableDevices = ADB.findAdbDevices();
+      await sleep(20000); // time required before an S4 running Android 5 is available
+      availableDevices = await ADB.findAdbDevices();
       // just select the first device
       device = new ADB(CONNECTION_TYPES.USB, availableDevices[0]);
       await device.connect();

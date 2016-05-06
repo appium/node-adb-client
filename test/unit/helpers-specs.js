@@ -6,7 +6,8 @@ import 'mochawait';
 import { generateMessage
        , packetFromBuffer
        , getFileName
-       , parseFileData } from '../../lib/helpers';
+       , parseFileData
+       , selectBySerialNumber } from '../../lib/helpers';
 import { ADB_COMMANDS, CONNECTION_TYPES } from '../../lib/constants';
 
 process.env.NODE_ENV = 'test';
@@ -15,6 +16,23 @@ chai.should();
 chai.use(chaiAsPromised);
 
 describe('helpers', () => {
+  describe('selectBySerialNumber', () => {
+    it('should return a device if one can be found for a given serial number', () => {
+      let serial = 12345;
+      let devices = [{ device: "test", serialNumber: 54321 }
+                   , { device: "test", serialNumber: serial}];
+      let returnedDevice = selectBySerialNumber(devices, serial);
+      returnedDevice.should.equal(devices[1]);
+    });
+    it('should throw if no device can be found for a given serial number', () => {
+      let serial = 54321;
+      let devices = [{ device: "test", serialNumber: 12345}];
+      () => {
+        selectBySerialNumber(devices, serial);
+      }.should.throw("No device available with the serial number: ", serial);
+
+    });
+  });
   describe('generateMessage', () => {
     let cnxn = ADB_COMMANDS.CMD_CNXN;
     it('should throw error when invalid command is passed', () => {

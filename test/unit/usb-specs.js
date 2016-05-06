@@ -20,34 +20,15 @@ describe('usb-device unit tests', () => {
     usbDevice.inputEndpoint = inputEndpoint;
     usbDevice.outputEndpoint = outputEndpoint;
   });
-  // describe('claimDevice', withMocks({ usbDevice }, (mocks) => {
-  //   before(() => {
-  //     endpoints = [LIBUSB_ENDPOINT_IN, LIBUSB_ENDPOINT_OUT ];
-  //     let interfaceDescriptor = { bInterfaceClass: ADB_VALUES.ADB_CLASS
-  //                              , bInterfaceSubClass: ADB_VALUES.ADB_SUBCLASS
-  //                              , bInterfaceProtocol: ADB_VALUES.ADB_PROTOCOL };
-  //     let iface = { descriptor: interfaceDescriptor
-  //                 , endpoints: endpoints };
-  //     usbDevice.interfaces = [iface];
-  //   });
-  //   after(() => {
-  //     usbDevice.inputEndpoint = inputEndpoint;
-  //     usbDevice.outputEndpoint = outputEndpoint;
-  //   });
-  //   it('should set inputEndpoint to endpoints[1] if endpoints[0] === LIBUSB_ENDPOINT_IN', async () => {
-  //     usbDevice.claimDevice();
-  //     usbDevice.inputEndpoint.should.equal(endpoints[1]);
-  //   });
-  // }));
   describe('setEndpoints', () => {
-    it('should set inputEndpoint to endpoints[0] if endpoints[0].direction is in', async () => {
+    it('should set inputEndpoint to endpoints[0] if endpoints[0].direction is in', () => {
       let endpoints = [ { direction: 'in', transferType: null }
                       , { direction: 'out', transferType: null }];
       usbDevice.setEndpoints(endpoints);
       usbDevice.inputEndpoint.direction.should.equal(endpoints[0].direction);
       usbDevice.inputEndpoint.transferType.should.equal(LIBUSB_TRANSFER_TYPE_BULK);
     });
-    it('should set inputEndpoint to endpoints[1] if endpoints[1].direction is in', async () => {
+    it('should set inputEndpoint to endpoints[1] if endpoints[1].direction is in', () => {
       let endpoints = [ { direction: 'out', transferType: null }
                       , { direction: 'in', transferType: null }];
       usbDevice.setEndpoints(endpoints);
@@ -57,10 +38,8 @@ describe('usb-device unit tests', () => {
   });
   describe('_sendMsg', withMocks({ usbDevice, outputEndpoint}, (mocks) => {
     it('should call outputEndpoint.transferAsync once if no payload', async () => {
-      let fakePacket = generateMessage(ADB_COMMANDS.CMD_OKAY, 12345, 12345, "");
       mocks.outputEndpoint.expects('transferAsync')
         .once()
-        .withExactArgs(fakePacket)
         .returns();
       await usbDevice._sendMsg(ADB_COMMANDS.CMD_OKAY, 12345, 12345, "");
       verify(mocks);

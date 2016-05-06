@@ -13,6 +13,7 @@ process.env.NODE_ENV = 'test';
 
 chai.should();
 chai.use(chaiAsPromised);
+let expect = chai.expect;
 
 describe('adb-device', () => {
   let inputEndpoint = { transferAsync: () => { return "nothing"; } };
@@ -62,6 +63,20 @@ describe('adb-device', () => {
       await adbDevice.sendAndOkay(ADB_COMMANDS.CMD_WRTE, localId, remoteId, "test")
             .should.be.fulfilled;
       mocks.usbDevice.verify();
+    });
+  }));
+  describe('shell', withMocks({ adbDevice }, (mocks) => {
+    it('should be rejected if open response is not okay', async () => {
+      let shellString = "shell:test.";
+      mocks.adbDevice.expects('sendAndOkay')
+        .once()
+        .withExactArgs(ADB_COMMANDS.CMD_OPEN
+                      , 12345
+                      , 0
+                      , shellString)
+        .returns({ command: "not okay" });
+      adbDevice.shell("test", false).should.be.rejected;
+      verify(mocks);
     });
   }));
   describe('open', withMocks({ adbDevice, fs }, (mocks) => {
@@ -150,15 +165,29 @@ describe('adb-device', () => {
       await adbDevice.open(command);
       verify(mocks);
     });
-    it('should call uninstall if command.type is uninstall', async () => {
-      let command = {
-        packageName: "testPackage"
-      };
-      mocks.adbDevice.expects('uninstall')
+  }));
+  describe('sendPublicKey', withMocks({ usbDevice }, mocks => {
+    it('should return true if response was CNXN',  async () => {
+      mocks.usbDevice.expects('_sendMsg')
         .once()
-        .withExactArgs(command.source);
-      await adbDevice.open(command);
-      mocks.adbDevice.verify;
+        .withArgs(ADB_COMMANDS.CMD_AUTH, 3, 0);
+      mocks.usbDevice.expects('_recvMsg')
+        .once()
+        .withExactArgs(CONNECT_VALUES.CONNECT_MAXDATA)
+        .returns({ command: ADB_COMMANDS.CMD_CNXN });
+      expect(await adbDevice.sendPublicKey()).to.be.true;
+      verify(mocks);
+    });
+    it('should return false if response was not CNXN',  async () => {
+      mocks.usbDevice.expects('_sendMsg')
+        .once()
+        .withArgs(ADB_COMMANDS.CMD_AUTH, 3, 0);
+      mocks.usbDevice.expects('_recvMsg')
+        .once()
+        .withExactArgs(CONNECT_VALUES.CONNECT_MAXDATA)
+        .returns({ command: "not cnxn" });
+      expect(await adbDevice.sendPublicKey()).to.be.false;
+      verify(mocks);
     });
   }));
 });

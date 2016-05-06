@@ -2,6 +2,7 @@ import usb from 'usb';
 import { USB_VENDOR_IDS, ADB_VALUES, CONNECTION_TYPES } from './lib/constants';
 import { logExceptOnTest } from './lib/helpers';
 import ADBDevice from './lib/adb-device';
+import Promise from 'bluebird';
 
 const NOT_CONNECTED = 0;
 const WAIT_FOR_AUTH = 1;
@@ -20,8 +21,23 @@ class ADB {
   }
 
   // *** STATIC FUNCTIONS ***
+  static async _getSerialNo (device) {
+    let langid = 0x0409;
+    let length = 255;
+    let deviceDescriptor = device.deviceDescriptor;
+    device.open();
+    let tempDevice = Promise.promisifyAll(device);
+    let serialNumber = await tempDevice.controlTransferAsync(usb.LIBUSB_ENDPOINT_IN
+                                                 , usb.LIBUSB_REQUEST_GET_DESCRIPTOR
+                                                 , ((usb.LIBUSB_DT_STRING << 8) | deviceDescriptor.iSerialNumber)
+                                                 , langid
+                                                 ,length);
+    device.close();
+    return serialNumber.toString('utf16le', 2);
+  }
+
   // return an array of devices that have an ADB interface
-  static findAdbDevices () {
+  static async findAdbDevices () {
     logExceptOnTest("Trying to find a usb device");
     let adbDevices = [];
     let usbDevices = usb.getDeviceList();
@@ -34,7 +50,8 @@ class ADB {
       let deviceInterface = this.getAdbInterface(device);
       if (deviceInterface !== null) {
         logExceptOnTest("Found an ADB device");
-        adbDevices.push({device, deviceInterface});
+        let serialNumber = await this._getSerialNo(device);
+        adbDevices.push({device, deviceInterface, serialNumber});
       }
     }
     if (adbDevices.length === 0) {
@@ -153,16 +170,6 @@ class ADB {
       throw new Error("State is not CONNECTED, cannot run a command.");
     }
     return output;
-  }
-
-  // I don't think this function is even being used?
-  async initConnection () {
-    if (this.state === NOT_CONNECTED) {
-      await this.device.initConnection();
-      this.state = CONNECTED;
-    } else {
-      logExceptOnTest("Already connected.");
-    }
   }
 
   async closeConnection () {

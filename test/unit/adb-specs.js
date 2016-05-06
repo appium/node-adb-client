@@ -39,6 +39,23 @@ describe('static functions', () => {
                , deviceDescriptor: deviceDescriptor
                , open: () => { return "nothing"; } };
   describe('getAdbInterface', () => {
+    it('should return null if the descriptors are null', () => {
+      device.deviceDescriptor = null;
+      device.interfaces[0].descrptor = null;
+      expect(adb.getAdbInterface(device)).to.be.a('null');
+      device.deviceDescriptor = deviceDescriptor;
+      device.interfaces[0].descrptor = interfaceDescriptor;
+    });
+    it('should return null if the device descriptor is null', () => {
+      device.deviceDescriptor = null;
+      expect(adb.getAdbInterface(device)).to.be.a('null');
+      device.interfaces[0].descrptor = interfaceDescriptor;
+    });
+    it('should return null if the interface descriptor is null', () => {
+      device.interfaces[0].descrptor = null;
+      expect(adb.getAdbInterface(device)).to.be.a('null');
+      device.deviceDescriptor = deviceDescriptor;
+    });
     it('should return null if the interface vendor is not one we recognze', () => {
       expect(adb.getAdbInterface(device)).to.be.a('null');
     });
@@ -55,34 +72,38 @@ describe('static functions', () => {
       expect(adb.getAdbInterface(device)).to.be.a('null');
     });
   });
-  describe('findAdbDevices', withMocks({ usbStub}, (mocks) => {
+  describe('findAdbDevices', withMocks({ usbStub, adb }, (mocks) => {
     usbStub.getDeviceList = () => { return "nothing"; };
     it('should throw an error if there are no usb devices', () => {
-      mocks.usbStub.expects('getDeviceList')
-        .once()
-        .returns([]);
-      () => {
-        adb.findAdbDevices();
-      }.should.throw("No USB devices found.");
-      mocks.usbStub.verify();
+      async () => {
+        mocks.usbStub.expects('getDeviceList')
+          .once()
+          .returns([]);
+        await adb.findAdbDevices().should.be.rejected();
+        verify(mocks);
+      }
     });
     it('should throw an error if none of the usb devices have ADB interfaces', () => {
-      mocks.usbStub.expects('getDeviceList')
-        .once()
-        .returns([device]);
-      () => {
-        adb.findAdbDevices();
-      }.should.throw("No ADB devices found.");
-      mocks.usbStub.verify();
+      async () => {
+        mocks.usbStub.expects('getDeviceList')
+          .once()
+          .returns([device]);
+        await adb.findAdbDevices().should.be.rejected();
+        verify(mocks);
+      }
     });
-    it('should return an object if there was a device with an adb interface', () => {
+    it('should return an object if there was a device with an adb interface', async () => {
       device.interfaces = [iface];
       iface.descriptor.bInterfaceClass = 255;
       mocks.usbStub.expects('getDeviceList')
         .once()
         .returns([device]);
-      expect(adb.findAdbDevices()).to.not.be.empty;
-      mocks.usbStub.verify();
+      mocks.adb.expects('_getSerialNo')
+        .once()
+        .returns("12345");
+      let availableDevices = await adb.findAdbDevices();
+      expect(availableDevices).to.not.be.empty;
+      verify(mocks);
     });
   }));
 });
@@ -134,24 +155,6 @@ describe('adb', () => {
         .returns(undefined);
       let output = await adbObj.runCommand(command);
       expect(output).to.be.an('undefined');
-      verify(mocks);
-    });
-  }));
-  describe('initConnection', withMocks({ adbDevice }, (mocks) => {
-    it('should call device.initConnection if state is NOT_CONNECTED', async () => {
-      adbObj.state = NOT_CONNECTED;
-      mocks.adbDevice.expects('initConnection')
-        .once();
-      await adbObj.initConnection();
-      adbObj.state.should.equal(CONNECTED);
-      verify(mocks);
-    });
-    it('should not call device.initConnection if state is CONNECTED', async () => {
-      adbObj.state = CONNECTED;
-      mocks.adbDevice.expects('initConnection')
-        .never();
-      await adbObj.initConnection();
-      adbObj.state.should.equal(CONNECTED);
       verify(mocks);
     });
   }));
