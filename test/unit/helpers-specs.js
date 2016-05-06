@@ -16,6 +16,7 @@ chai.use(chaiAsPromised);
 
 describe('helpers', () => {
   describe('generateMessage', () => {
+    let cnxn = ADB_COMMANDS.CMD_CNXN;
     it('should throw error when invalid command is passed', () => {
       () => {
         generateMessage(1, 0, 0, "payload", CONNECTION_TYPES.USB);
@@ -27,14 +28,19 @@ describe('helpers', () => {
       }.should.throw("generateMessage: invalid connection type");
     });
     it('should append data payload if connection type is tcp', () => {
-      let cnxn = ADB_COMMANDS.CMD_CNXN;
       let tcpMsg = generateMessage(cnxn, 0, 0, "payload", CONNECTION_TYPES.TCP);
       tcpMsg.length.should.not.equal(24);
     });
     it('should not append data payload if connection type is usb', () => {
-      let cnxn = ADB_COMMANDS.CMD_CNXN;
       let usbMsg = generateMessage(cnxn, 0, 0, "payload", CONNECTION_TYPES.USB);
       usbMsg.length.should.equal(24);
+    });
+    it('should set dataLen and crc to 0 if no payload', () => {
+      let tcpMsg = generateMessage(cnxn, 0, 0, "", CONNECTION_TYPES.TCP);
+      let dataLen = tcpMsg.readUInt32LE(12);
+      let dataCrc = tcpMsg.readUInt32LE(16);
+      dataLen.should.equal(0);
+      dataCrc.should.equal(0);
     });
   });
   describe('packtFromBuffer', () => {
