@@ -56,9 +56,6 @@ describe('static functions', () => {
       expect(adb.getAdbInterface(device)).to.be.a('null');
       device.deviceDescriptor = deviceDescriptor;
     });
-    it('should return null if the interface vendor is not one we recognze', () => {
-      expect(adb.getAdbInterface(device)).to.be.a('null');
-    });
     it('should return an interface if there is one for ADB comms', () => {
       deviceDescriptor.idVendor = 0x04e8; // samsung
       adb.getAdbInterface(device).should.not.be.null;
