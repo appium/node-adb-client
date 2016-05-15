@@ -134,6 +134,17 @@ describe('adb-device', () => {
       await adbDevice.open(command);
       verify(mocks);
     });
+    it('should call list if command.type is pull', async () => {
+      let command = {
+        type: "list"
+      , remotePath: "test"
+      };
+      mocks.adbDevice.expects('list')
+        .once()
+        .withExactArgs(command.remotePath);
+      await adbDevice.open(command);
+      verify(mocks);
+    });
     it('should call install if command.type is install', async () => {
       let command = {
         type: "install"
