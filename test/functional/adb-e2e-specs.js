@@ -5,7 +5,7 @@ import path from 'path';
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import { fs } from 'appium-support';
-import { CONNECTION_TYPES } from '../../lib/constants';
+import { CONNECTION_TYPES, FILE_TYPES } from '../../lib/constants';
 import { sleep } from 'asyncbox';
 
 process.env.NODE_ENV = 'test';
@@ -188,6 +188,55 @@ describe('adb-e2e', () => {
       };
       let output = await device.runCommand(command);
       output.should.equal(-1);
+    });
+  });
+  describe('list', () => {
+    it('should return a list of files in a folder', async () => {
+      // Hard to test symlinks because we can't create them on an un-rooted phone
+      let commandString = "cd sdcard; mkdir tmp; cd tmp; touch file1; touch file2; mkdir folder1";
+      let command = { // set print to false so we get the data back as a string
+        type: "shell"
+      , string: commandString
+      , print: false
+      };
+      await device.runCommand(command);
+      command = {
+        type: "list"
+      , remotePath: "sdcard/tmp"
+      };
+      let output = await device.runCommand(command);
+      let filenames = output.map(file => file.filename);
+      filenames.should.deep.equal(['file1', 'file2', 'folder1']);
+      let filetypes = output.map(file => file.type);
+      filetypes.should.deep.equal([
+        FILE_TYPES.FILE
+      , FILE_TYPES.FILE
+      , FILE_TYPES.DIRECTORY
+      ]);
+    });
+    it('should return an empty array for an empty folder', async () => {
+      let command = {
+        type: "list"
+      , remotePath: "sdcard/tmp/folder1"
+      };
+      let output = await device.runCommand(command);
+      output.length.should.equal(0);
+    });
+    it('should return an empty array when called on a file', async () => {
+      let command = {
+        type: "list"
+      , remotePath: "sdcard/tmp/file1"
+      };
+      let output = await device.runCommand(command);
+      output.length.should.equal(0);
+    });
+    it('should return an empty array when called on a non-existent remote path', async () => {
+      let command = {
+        type: "list"
+      , remotePath: "sdcard/tmp/" + Date.now()
+      };
+      let output = await device.runCommand(command);
+      output.length.should.equal(0);
     });
   });
   describe('install', () => {
