@@ -47,6 +47,8 @@ class ADB {
       throw new Error("No USB devices found.");
     }
     for (let device of usbDevices) {
+      let vendorID = device.deviceDescriptor.idVendor;
+      if (USB_VENDOR_IDS.indexOf(vendorID) === -1) continue;
       let deviceInterface = this.getAdbInterface(device);
       if (deviceInterface !== null) {
         logExceptOnTest("Found an ADB device");
@@ -68,8 +70,7 @@ class ADB {
 
     if (device.deviceDescriptor !== null && device.configDescriptor !== null) {
       // if the vendorID is not part of the vendors we recognize
-      let vendorID = device.deviceDescriptor.idVendor;
-      if (USB_VENDOR_IDS.indexOf(vendorID) === -1) return null;
+
       let interfaces = device.interfaces;
       let returnInterface = null;
       for (let iface of interfaces) {
