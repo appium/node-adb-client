@@ -24,17 +24,21 @@ These are the functions you should be interacting with when using this library.
 ## Static Functions
 Including the library (ADB class) will get you access to the static function 
 findAdbDevices. This function will return an array of ADB compatible devices, 
-including the devices serial number.  
-    let availableDevices = await ADB.findAdbDevices();
-    if (availableDevices.length > 0) {
-        // just select the first device
-        let device = new ADB(CONNECTION_TYPES.USB, availableDevices[0]);
+including the devices serial number.
+```  
+let availableDevices = await ADB.findAdbDevices();
+if (availableDevices.length > 0) {
+    // just select the first device
+    let device = new ADB(CONNECTION_TYPES.USB, availableDevices[0]);
+```
 
 You can also use the selectBySerial function from lib/helpers to search through 
 available ADB devices and find the device with a given serial number. For example:  
-    // select device by serial number: 4d00a90c4f041119
-    let serial = "4d00a90c4f041119";
-    let selectedDevice = selectBySerialNumber(availableDevices, serial);
+```
+// select device by serial number: 4d00a90c4f041119
+let serial = "4d00a90c4f041119";
+let selectedDevice = selectBySerialNumber(availableDevices, serial);
+```
 
 ## Member Functions
 After creating a new ADB instance from a device you gain access to a few functions
@@ -60,50 +64,62 @@ are:
 
 #### Shell
 Run a shell command on the device.  
-    let command = {
-        type:   "shell"
-      , string: "ls /sdcard"
-      , print: false
-    };
+```
+let command = {
+    type:   "shell"
+  , string: "ls /sdcard"
+  , print: false
+};
+```
 By default all shell command output is printed to the console, you can use 
 `print: false` to block this.
 
 #### Push
 Push a file to the device.  
-    let command = {
-      type:        "push"
-    , source:      "path/to/some/file"
-    , destination: "sdcard/"
-    };
+```
+let command = {
+  type:        "push"
+, source:      "path/to/some/file"
+, destination: "sdcard/"
+};
+```
 
 #### Pull
-Pull a file from the device.  
-    let command = {
-      type:        "push"
-    , source:      "sdcard/some/file"
-    , destination: "~/Desktop/file"
-    };
+Pull a file from the device.
+```  
+let command = {
+  type:        "push"
+, source:      "sdcard/some/file"
+, destination: "~/Desktop/file"
+};
+```
 
 #### Install
 Install an apk on the deivce.  
-    let command = {
-      type: "install"
-    , source: "path/to/app.apk"
-    };
+```
+let command = {
+  type: "install"
+, source: "path/to/app.apk"
+};
+```
 
 #### Uninstall
 Uninstall an apk.  
-    let command = {
-      type: "uninstall"
-    , packageName: "com.example.android.contactmanager"
-    };
+```
+let command = {
+  type: "uninstall"
+, packageName: "com.example.android.contactmanager"
+};
+```
 
 #### Reboot
 Reboot the device. Note that the promise for this function resolves when the reboot
 executes, it does not wait for the device to fully boot up before resolving.  
-    let command = {
-      type:   "reboot"
-    };
+```
+let command = {
+  type:   "reboot"
+};
+```
 
 # Implementing a device type
 Currently node-adb-client only supports connecting to ADB devices via USB. The following
