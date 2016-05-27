@@ -64,7 +64,7 @@ class ADB {
 
   // search through a devices interfaces for an interface
   // that can be used for ADB communications
-  static getAdbInterface (device) {
+  static _getAdbInterface (device) {
     device.open();
     if (device.interfaces === null) return null;
 
