@@ -104,3 +104,17 @@ executes, it does not wait for the device to fully boot up before resolving.
     let command = {
       type:   "reboot"
     };
+
+# Implementing a device type
+Currently node-adb-client only supports connecting to ADB devices via USB. The following
+functions would have to be implemented in a new class for connections over TCP, or
+any other connection type supported by the ADB daemon in the future. See the USB
+Device class for implementation examples.
+
+## Send Msg
+This function should generate an ADB packet with the required fields and format,
+and send it to the device.
+
+## Recv Msg
+This function should take in data from the device and parse it into an ADB packet
+format, and return that packet.
