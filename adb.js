@@ -49,7 +49,7 @@ class ADB {
     for (let device of usbDevices) {
       let vendorID = device.deviceDescriptor.idVendor;
       if (USB_VENDOR_IDS.indexOf(vendorID) === -1) continue;
-      let deviceInterface = this.getAdbInterface(device);
+      let deviceInterface = this._getAdbInterface(device);
       if (deviceInterface !== null) {
         logExceptOnTest("Found an ADB device");
         let serialNumber = await this._getSerialNo(device);
