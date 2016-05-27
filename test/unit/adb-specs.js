@@ -38,35 +38,35 @@ describe('static functions', () => {
   let device = { interfaces: [iface]
                , deviceDescriptor: deviceDescriptor
                , open: () => { return "nothing"; } };
-  describe('getAdbInterface', () => {
+  describe('_getAdbInterface', () => {
     it('should return null if the descriptors are null', () => {
       device.deviceDescriptor = null;
       device.interfaces[0].descrptor = null;
-      expect(adb.getAdbInterface(device)).to.be.a('null');
+      expect(adb._getAdbInterface(device)).to.be.a('null');
       device.deviceDescriptor = deviceDescriptor;
       device.interfaces[0].descrptor = interfaceDescriptor;
     });
     it('should return null if the device descriptor is null', () => {
       device.deviceDescriptor = null;
-      expect(adb.getAdbInterface(device)).to.be.a('null');
+      expect(adb._getAdbInterface(device)).to.be.a('null');
       device.interfaces[0].descrptor = interfaceDescriptor;
     });
     it('should return null if the interface descriptor is null', () => {
       device.interfaces[0].descrptor = null;
-      expect(adb.getAdbInterface(device)).to.be.a('null');
+      expect(adb._getAdbInterface(device)).to.be.a('null');
       device.deviceDescriptor = deviceDescriptor;
     });
     it('should return an interface if there is one for ADB comms', () => {
       deviceDescriptor.idVendor = 0x04e8; // samsung
-      adb.getAdbInterface(device).should.not.be.null;
+      adb._getAdbInterface(device).should.not.be.null;
     });
     it('should return null if there are interfaces but no ADB interface', () => {
       iface.descriptor.bInterfaceClass = 100;
-      expect(adb.getAdbInterface(device)).to.be.a('null');
+      expect(adb._getAdbInterface(device)).to.be.a('null');
     });
     it('should return null if there are no interfaces at all', () => {
       device.interfaces = null;
-      expect(adb.getAdbInterface(device)).to.be.a('null');
+      expect(adb._getAdbInterface(device)).to.be.a('null');
     });
   });
   describe('findAdbDevices', withMocks({ usbStub, adb }, (mocks) => {
