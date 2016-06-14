@@ -32,7 +32,7 @@ if (availableDevices.length > 0) {
     let device = new ADB(CONNECTION_TYPES.USB, availableDevices[0]);
 ```
 
-You can also use the selectBySerial function from lib/helpers to search through 
+You can also use the `selectBySerial` function from `lib/helpers` to search through 
 available ADB devices and find the device with a given serial number. For example:  
 ```
 // select device by serial number: 4d00a90c4f041119
